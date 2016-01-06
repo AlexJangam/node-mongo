@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<h1>Mongo Postman </h1>
+<style>
+textarea.addval{
+width:50%;
+}
+.mgset{
+width:30%;
+height:150px;
+float:left;
+border:1px solid;
+margin:10px 30px;
+}
+</style>
+</head>
+<body>
+<div>
+	<div>Mongo Operations : </div>
+	<div class="mgset">
+		<div><h3>Get Collection<h3></div>
+		<div id="getCollection">
+			<div>Collection Names : 
+			<div><input class="add" type="button" value="Get Collections"></input> <br/><textarea class="addval"></textarea></div>
+			</div>
+		</div>
+	</div>	
+	<div class="mgset">
+		<div><h3>Add Collection<h3></div>
+		<div id="addCollection">
+			<div>Collection Name : <input class="addval"></input> &#160; <input class="add" type="button" value="Add"></input></div>
+		</div>
+	</div>
+	<div class="mgset">
+		<div><h3>Add Data<h3></div>
+		<div id="addData">
+			<div>
+			Collection Name : <select id="colList"></select>
+			<div><textarea class="addval"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
+			</div>
+		</div>
+	</div>
+	<div class="mgset">
+		<div><h3>Add Bulk Data<h3></div>
+		<div id="addBulkData">
+			<div>
+			Collection Name : 
+			<div><textarea class="addval"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="mgset"></div>
+
+</div>
+
+<script src="jquery-1.11.3.min.js"></script>
+<script src="node-mongo-test.js"></script>
+</body>
+</html>
