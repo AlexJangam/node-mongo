@@ -289,6 +289,7 @@ function initiateClick(){
 		console.log(err);
 		finallyCall(err.responseText)
 	})
+	$(this).parents("tr").remove();
 	})
 
 }
