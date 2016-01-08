@@ -4,6 +4,7 @@ node-mongo plugin
  * wt-node-mongo v1.0.0 (http://www.wenable.com/)
  * Copyright Wenable Technologies pvt Ltd 2016 , Inc.
  * Licensed under MIT (http://opensource.org/licenses/MIT)
+ * Developed by alexander pradeep jangam alexander.jangam@wenable.com
 
 
 Documentation : 
