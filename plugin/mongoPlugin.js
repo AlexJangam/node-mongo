@@ -11,6 +11,7 @@ var mongoPg
 ,defaultPath = "mongodb://localhost:27017";
 
 var MongoClient = require('mongodb').MongoClient;
+var ObjectId = require('mongodb').ObjectID;
 
 // mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 
@@ -118,16 +119,20 @@ mongoPg = function(dbName,path,callback){
 			findData = colcName;upData = findData;colcName = defColName;
 			if(typeof upData ==='function')callB = data;
 		}
-		console.log(colcName,findData,upData);
+
 		if(colcName){
+			if(findData._id){
+				findData._id = ObjectId(findData._id)
+			}
 		operationDB(function(db){
 			if(firstOnly === true){
-				db.collection(colcName).updateOne(findData,
-					{$set :upData},function(err,result){
-				exeCallBack(err,result,callB,db)});
+					db.collection(colcName).updateOne(findData,
+						{$set :upData},function(err,result){
+					exeCallBack(err,result,callB,db)});
 			}else {
 				db.collection(colcName).updateMany(findData,{$set :upData},function(err,result){
 				exeCallBack(err,result,callB,db)});
+
 			}
 		})}
 	}
@@ -143,6 +148,7 @@ mongoPg = function(dbName,path,callback){
 		}else{
 			if(typeof colcName =="string"){
 				operationDB(function(db){
+					if(findData._id)findData._id = ObjectId(findData._id)
 					if(onlyOne){
 						db.collection(colcName).removeOne(findData,function(err,result){
 						exeCallBack(undefined,result,callB,db)

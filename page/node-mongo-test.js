@@ -125,7 +125,7 @@ $("#removeQuery .remove").click(function(){
 		console.log("error",e,query)
 		query = {}
 	}
-	rmData.data = query;
+	rmData.query = query;
 	rmData.onlyOne=$("#removeQuery .cnt").is(":checked");
 
 	var coll = colList[$("#colList").val()];
@@ -168,11 +168,12 @@ $("#credentials .change").click(function(){
 		password : encrypt($("#credentials .oldpswd").val())
 	}
 	reqData = {};
-	reqData.query = {
-		find : srchData,
-		update : {password : encrypt($("#credentials .nwpswd").val())}
+	reqData = {
+		query : srchData,
+		update : {password : encrypt($("#credentials .nwpswd").val())},
+		onlyone:true
 	}
-	serverCall(genericCall("/mongo/update/credentials","PUT",query),
+	serverCall(genericCall("/mongo/update/credentials","PUT",reqData),
 		function(data){
 			if(data.length > 0)
 			$("#credentials .reslt").html("User Exists");
@@ -186,9 +187,11 @@ $("#credentials .change").click(function(){
 $("#findQuery .selectables .fetch").click(function(){
 	serverCall(genericCall("/mongo/search/"+colList[$("#colList").val()*1]+"/first-only","POST",{}),
 		function(data){
+			collStates = [];
 			$("#findQuery .fieldSel .rmuse").remove();
 		for(var i in data){
 			$("#findQuery .fieldSel").append("<option class='rmuse' value="+i+">"+i+"</option>");
+			collStates.push(i);
 		}
 		finallyCall(data)
 	},function(err){
@@ -202,15 +205,90 @@ $("#findQuery .selectables .search").click(function(){
 	console.log($(".selectables .fieldSel").val());
 	if($(".selectables .fieldSel").val())
 	reqData.query[$(".selectables .fieldSel").val()]=regxFn.subString($("#findQuery .selectables .searchVal").val());
-
+	$("#findQuery .result").html("")
 	serverCall(genericCall("/mongo/search/"+colList[$("#colList").val()*1],"POST",reqData),
 		function(data){
-		for(var i in data){
-			$("#findQuery .fieldSel").append("<option class='rmuse' value="+i+">"+i+"</option>");
+		var tableE = $(document.createElement("table"))
+		collStates = {}
+			for(var k in data[0]){
+				collStates[k]=k;
+			}
+
+		tableE.append(makeTableRow(collStates,true))
+
+		for (var i = 0,iL= data.length;i<iL; i++) {
+			tableE.append(makeTableRow(data[i]))
 		}
+
+		$("#findQuery .result").append(tableE);
+		initiateClick()
 		finallyCall(data)
 	},function(err){
 		console.log(err);
 		finallyCall(err.responseText)
 	})
 })
+
+function makeTableRow(data,head){
+	var actions = "<td><button class='save'>Save</button>"+"<button class='delete'>delete</button></td>"
+	var trD = $(document.createElement("tr"))
+	trD.addClass(data._id)
+	for(var td in data){
+		var tdE = $(document.createElement("td"));
+		if(td != "_id" && !head )
+		tdE.append("<input value="+data[td]+"></input>")
+		else tdE.append(data[td])
+		tdE.addClass(td);
+
+		trD.append(tdE)
+	}
+	if(!head)trD.append(actions)
+	else trD.append("<td>Save/Delete</td>")
+	return trD;
+}
+
+function initiateClick(){
+	$("#findQuery .result .save").off();
+	$("#findQuery .result .delete").off();
+	$("#findQuery .result .save").on("click",function(){
+		var clsNme = $(this).parents("tr").attr("class");
+		var updtDta = {}
+		$(" ." +clsNme +" td").each(function(){
+			if($(this).attr("class") != undefined){
+				if($(this).children("input").val())
+				updtDta[$(this).attr("class")] = $(this).children("input").val();
+			}
+		})
+		respDat = {
+			query : { "_id": clsNme },
+			update : updtDta,
+			onlyone:true
+		}
+		serverCall(genericCall("/mongo/update/"+colList[$("#colList").val()],"PUT",respDat),
+			function(data){
+
+			finallyCall(data)
+		},function(err){
+			console.log(err);
+			finallyCall(err.responseText)
+		})
+		console.log(respDat);
+	})
+
+	$("#findQuery .result .delete").on("click",function(){
+		respDat = {
+			query : { "_id":$(this).parents("tr").attr("class")},
+			onlyOne:true
+		}
+
+	serverCall(genericCall("/mongo/remove/"+colList[$("#colList").val()],"delete",respDat),
+		function(data){
+
+		finallyCall(data)
+	},function(err){
+		console.log(err);
+		finallyCall(err.responseText)
+	})
+	})
+
+}

@@ -19,6 +19,7 @@ width:43%;
 .ht200{height: 200px;}
 .htfix{height:0;clear:both;line-height:0}
 .fl{float:left;}
+.clr{clear:both;}
 .mgOpe{
   width:69%;
   border-right: 1px solid;
@@ -42,4 +43,7 @@ width:43%;
 .lh30{
   line-height: 30px;
   min-width:100px;
+}
+#findQuery .result table td{
+  border : 1px solid;
 }

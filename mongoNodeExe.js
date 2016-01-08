@@ -130,7 +130,7 @@ app.delete("/mongo/remove/*",function(req, res){
   //collection name in path
   var coll = req.url.split("/mongo/remove/")[1];
   //mongoPgn.remove("collectionName",{},onlyOne(T/F - op),callback(optional))
-  mong.remove(coll,removeReq.data,removeReq.onlyOne,function(err,data){
+  mong.remove(coll,removeReq.query,removeReq.onlyOne,function(err,data){
     if(err){ errorRes(res,err);}
     else{	res.send(JSON.stringify(data)); }
   })
@@ -143,10 +143,10 @@ app.put("/mongo/update/*",function(req, res){
   var coll = req.url.split("/mongo/update/")[1];
   console.log(upReq);
   //mongoPgn.update("collectionName","searchQuery","upQuery",callback(optional),firstOnly)
-  mong.update(coll,upReq.find,upReq.update,function(err,data){
+  mong.update(coll,upReq.query,upReq.update,function(err,data){
     if(err){ errorRes(res,err);}
     else{	res.send(JSON.stringify(data)); }
-  },true)
+  },upReq.onlyone)
 })
 
 /*Do not modify this #fileReader start 	*/
