@@ -2,42 +2,39 @@
 <html>
 <head>
 <h1>Mongo Postman </h1>
-<style>
-textarea.addval{
-width:50%;
-}
-.mgset{
-width:30%;
-height:150px;
-float:left;
-border:1px solid;
-margin:10px 30px;
-}
-</style>
+<link rel="stylesheet" href="custom.css" type="text/css">
+
 </head>
 <body>
-<div>
+<div class="mgOpe fl">
 	<div>Mongo Operations : </div>
 	<div class="mgset">
 		<div><h3>Get Collection<h3></div>
 		<div id="getCollection">
-			<div>Collection Names : 
-			<div><input class="add" type="button" value="Get Collections"></input> <br/><textarea class="addval"></textarea></div>
+			<div>Collection Names :
+			<div>
+				<input class="add" type="button" value="Get Collections"></input> <br/>
+				<textarea class="addval sizechg"></textarea></div>
 			</div>
 		</div>
-	</div>	
+	</div>
 	<div class="mgset">
 		<div><h3>Add Collection<h3></div>
 		<div id="addCollection">
-			<div>Collection Name : <input class="addval"></input> &#160; <input class="add" type="button" value="Add"></input></div>
+			<div>Collection Name : <input class="addval sizechg"></input> &#160; <input class="add" type="button" value="Add"></input></div>
 		</div>
 	</div>
+
+	<div>
+	Select Collection : 	<select id="colList"></select>
+	</div>
+
 	<div class="mgset">
 		<div><h3>Add Data<h3></div>
 		<div id="addData">
 			<div>
-			Collection Name : <select id="colList"></select>
-			<div><textarea class="addval"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
+			Insert Data :
+			<div><textarea class="addval sizechg"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
 			</div>
 		</div>
 	</div>
@@ -45,17 +42,78 @@ margin:10px 30px;
 		<div><h3>Add Bulk Data<h3></div>
 		<div id="addBulkData">
 			<div>
-			Collection Name : 
-			<div><textarea class="addval"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
+			Insert Data :
+			<div><textarea class="addval sizechg"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
 			</div>
 		</div>
 	</div>
-	
-	<div class="mgset"></div>
 
+	<div class="mgset ht200">
+		<div><h3>User Data Modifications<h3></div>
+		<div id="credentials">
+			<div class="fl lft-aln">Username :  </div><input  class="name sizechg"></input><br/>
+			<div class="fl lft-aln">Current Password : </div><input  class="oldpswd sizechg"></input><br/>
+			<div class="fl lft-aln">New Password : </div><input  class="nwpswd sizechg"></input>
+			<br/>
+			<input class="check" type="button" value="Check"></input>
+			<input class="change" type="button" value="Change"></input>
+			<span class="reslt"></span>
+			<div class="htfix"></div>
+			</div>
+	</div>
+
+	<div class="mgset ht200">
+		<div><h3>Custom Queries<h3></div>
+		<div id="customUpdates">
+			<div class="fl lft-aln">findQuery :	</div><textarea class="sizechg"></textarea><br/>
+			<div class="fl lft-aln">Update Query :	</div><textarea class="sizechg"></textarea>
+		</div>
+	</div>
+
+	<div class="mgset">
+		<div><h3>Search Custom Data<h3></div>
+		<div id="searchQuery">
+			<div>
+			Query Data :
+			<div><textarea class="searchval sizechg"></textarea> <br/> <input class="search" type="button" value="Search"></input></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="mgset">
+		<div><h3>Delete data<h3></div>
+		<div id="removeQuery">
+			<div>
+			Delete which contains :  <input type="checkbox" class="cnt sizechg"></input>Only One
+			<div><textarea class="removeval sizechg"></textarea> <br/> <input class="remove" type="button" value="Remove"></input></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="mgset extend">
+		<div><h3>Fetch Custom Data<h3> </div>
+		<div id="findQuery">
+			<div class="selectables">
+			<div  class="fl defwd fetch"><button class="lh30">fetch</button></div>
+			<div class="fl defwd"><select class="fieldSel lh30"><option value="">All</option></select></div>
+			<div class="fl defwd"><input class="searchVal lh30" placeholder="Search with Text" ></input></div>
+			<div class="fl defwd"><button class="search lh30" >Search</button></div>
+			</div>
+			<div class="result">
+
+			</div>
+
+		</div>
+	</div>
+
+	<div class="htfix"></div>
 </div>
-
+<div class="lgs fl">
+	<div class="headResp">Response Messages: <button class="clear">clear</button></div>
+	<div class="resp"></div>
+</div>
 <script src="jquery-1.11.3.min.js"></script>
 <script src="node-mongo-test.js"></script>
+<script src="sha2.js"></script>
 </body>
 </html>

@@ -10,10 +10,23 @@ function serverCall(callData,sCB,errCB){
 	dataType: "json",
 	data: callData.data,
 	success: sCB,
-	error:errCB
+	error:errCB,
+
   })
 }
+var regxFn = {
+	subString : function(vRegx){
 
+		return {
+			$regex: ".*"+vRegx+".*",
+			$options: "i"
+		}
+	}
+}
+
+function encrypt(str){
+return CryptoJS.SHA256(str).toString();
+}
 function genericCall(url,method,data){
 	var callOb = {
 		url:url?url:"/default",
@@ -22,12 +35,21 @@ function genericCall(url,method,data){
 	};
 	return callOb;
 }
+
+function	finallyCall(data){
+	var dtaJsn = data;
+	if(typeof data == "object")
+		dtaJsn = JSON.stringify(data)
+
+	$(".lgs .resp").append("<div>"+(new Date() +"").slice(4,24) +" : "+ data +"</div>")
+}
 $("#addCollection .add").click(function(){
 	val = $("#addCollection .addval").val();
 	console.log(val)
 	serverCall(genericCall("/mongo/set-collection","POST",val),
 	function(data){
 		console.log(data)
+		finallyCall(data)
 	},function(err){
 		console.log(err)
 	})
@@ -37,11 +59,11 @@ $("#getCollection .add").click(function(){
 	serverCall(genericCall("/mongo/get-collections"),
 	function(data){
 		$("#getCollection .addval").val(data)
-		colList = data;
+		colList = data;$("#colList").html("")
 		for(var i in data){
 			$("#colList").append("<option value="+i+">"+data[i]+"</option>")
 		}
-		
+		finallyCall(data)
 	},function(err){
 		console.log(err)
 	})
@@ -49,17 +71,146 @@ $("#getCollection .add").click(function(){
 
 $("#addData .add").click(function(){
 	var pstDta = {
-	colname : colList[$("#addData #colList").val()*1],
+	colname : colList[$("#colList").val()*1],
 	value : JSON.parse($("#addData .addval").val())
 	}
-	serverCall(genericCall("/mongo/add","POST",pstDta))
+	serverCall(genericCall("/mongo/add","POST",pstDta),function(data){
+			finallyCall(data)
+	})
 })
 
 $("#addBulkData .add").click(function(){
 	var pstDta = {
-	colname : colList[$("#addData #colList").val()*1],
+	colname : colList[$("#colList").val()*1],
 	value : JSON.parse($("#addBulkData .addval").val())
 	}
 	console.log(pstDta.value)
-	serverCall(genericCall("/mongo/add-bulk","POST",pstDta))
+	serverCall(genericCall("/mongo/add-bulk","POST",pstDta),function(data){
+		finallyCall(data)
+	})
+})
+
+
+$("#searchQuery .search").click(function(){
+	var query,reqData = {};
+	try {
+		console.log($("#searchQuery .searchval").val())
+		query = $("#searchQuery .searchval").val();
+		console.log("query",query)
+		reqData.query = JSON.parse(query)
+	} catch (e) {
+		console.log("error",e,reqData)
+		reqData.query = {}
+	}
+
+	var coll = colList[$("#colList").val()*1];
+
+	if(coll!=undefined){
+		serverCall(genericCall("/mongo/search/"+coll,"POST",reqData),
+			function(data){
+			finallyCall(data)
+		})
+	}else{
+		alert("select a collection")
+	}
+})
+
+$("#removeQuery .remove").click(function(){
+	var query,onlyOne,rmData = {};
+	try {
+		query = $("#removeQuery .removeval").val();
+		if(typeof query == "string")query = JSON.parse(query)
+
+	} catch (e) {
+		console.log("error",e,query)
+		query = {}
+	}
+	rmData.data = query;
+	rmData.onlyOne=$("#removeQuery .cnt").is(":checked");
+
+	var coll = colList[$("#colList").val()];
+
+	if(coll!=undefined){
+		serverCall(genericCall("/mongo/remove/"+coll,"DELETE",rmData),
+			function(data){
+			finallyCall(data)
+		})
+	}else{
+		alert("select a collection")
+	}
+
+})
+
+$(".lgs .clear").click(function(){
+	$(".lgs .resp").html("")
+})
+
+$("#credentials .check").click(function(){
+	reqData = {}
+	$("#credentials .reslt").html("");
+	reqData.query = {
+		name : $("#credentials .name").val(),
+		password : encrypt($("#credentials .oldpswd").val())
+	}
+
+	serverCall(genericCall("/mongo/search/credentials","POST",reqData),
+		function(data){
+			if(data.length > 0)
+			$("#credentials .reslt").html("User Exists");
+		finallyCall(data)
+	})
+})
+
+$("#credentials .change").click(function(){
+	$("#credentials .reslt").html("");
+	srchData = {
+		name : $("#credentials .name").val(),
+		password : encrypt($("#credentials .oldpswd").val())
+	}
+	reqData = {};
+	reqData.query = {
+		find : srchData,
+		update : {password : encrypt($("#credentials .nwpswd").val())}
+	}
+	serverCall(genericCall("/mongo/update/credentials","PUT",query),
+		function(data){
+			if(data.length > 0)
+			$("#credentials .reslt").html("User Exists");
+		finallyCall(data)
+	},function(err){
+		console.log(err);
+		finallyCall(err.responseText)
+	})
+})
+
+$("#findQuery .selectables .fetch").click(function(){
+	serverCall(genericCall("/mongo/search/"+colList[$("#colList").val()*1]+"/first-only","POST",{}),
+		function(data){
+			$("#findQuery .fieldSel .rmuse").remove();
+		for(var i in data){
+			$("#findQuery .fieldSel").append("<option class='rmuse' value="+i+">"+i+"</option>");
+		}
+		finallyCall(data)
+	},function(err){
+		console.log(err);
+		finallyCall(err.responseText)
+	})
+})
+
+$("#findQuery .selectables .search").click(function(){
+	var reqData = {query:{}};
+	console.log($(".selectables .fieldSel").val());
+	if($(".selectables .fieldSel").val())
+	reqData.query[$(".selectables .fieldSel").val()]=regxFn.subString($("#findQuery .selectables .searchVal").val());
+
+	serverCall(genericCall("/mongo/search/"+colList[$("#colList").val()*1],"POST",reqData),
+		function(data){
+		for(var i in data){
+			$("#findQuery .fieldSel").append("<option class='rmuse' value="+i+">"+i+"</option>");
+		}
+		finallyCall(data)
+	},function(err){
+		console.log(err);
+		finallyCall(err.responseText)
+	})
 })

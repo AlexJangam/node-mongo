@@ -1,0 +1,45 @@
+textarea.sizechg {
+width:90%;
+}
+input.sizechg{
+	height:20px;
+}
+.mgset{
+width:45%;
+height:170px;
+float:left;
+border:1px solid;
+margin:10px 15px 10px 0px;
+padding-left:20px;
+}
+.mgset.extend{width:93.5%;height: 400px;}
+.mgset.extend textarea.sizechg {
+width:43%;
+}
+.ht200{height: 200px;}
+.htfix{height:0;clear:both;line-height:0}
+.fl{float:left;}
+.mgOpe{
+  width:69%;
+  border-right: 1px solid;
+  padding-left:5px;
+  height: 700px;
+  overflow: auto;
+  border: 1px solid;
+}
+.lgs{width:30%;text-align: center;}
+.lgs .headResp{border-bottom: 1px solid;}
+.lgs .resp{text-align: left;padding-left:5px;}
+#colList{width: 34%;height: 30px;}
+.lft-aln.fl{width:150px;}
+#findQuery .selectables .defwd{
+  margin:0 10px;
+}
+.defwd .fieldSel  {
+    height: 36px;
+    min-width: 160px;
+}
+.lh30{
+  line-height: 30px;
+  min-width:100px;
+}

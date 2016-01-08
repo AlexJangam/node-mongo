@@ -24,10 +24,14 @@ mongoPg = function(dbName,path,callback){
 		//console.log("connUrl",connUrl)
 		MongoClient.connect(connUrl, function(err, mdb) {
 		if(err)console.log("err",err)
-		opfn(mdb);
-		//mdb.close()
-		})
 
+		//* * //removing slash will interchange
+		try {opfn(mdb);} catch (e) {
+			console.log("commonError:",e);
+			mdb.close()
+		}
+		//*/	opfn(mdb)
+		})
 	}
 	function exeCallBack(err,data,callB,db){
 		// common callback execution with validation check for function
@@ -37,24 +41,23 @@ mongoPg = function(dbName,path,callback){
 
 	var createCollection = function(name,postCreate){
 		defColName = name;
-		if(!postCreate)postCreate = function(){}
+		if(name){
 		operationDB(function(db){
 			db.createCollection(name,function(err,con){
 				console.log("creating",name)
 				if(err)console.log("Error",err)
 				if(colList.indexOf(name)==-1)colList.push(name)
-
 				exeCallBack(err,con,postCreate,db);
 			});
 			//db.close();
-		})
+		})}
 	}
 
 	// set a default colection name to work with, and its latest created collection if not mentioned.
 	function setDefaultCollection(nm){
 		defColName = nm;
 	}
-	var colList;
+	var colList = [];
 	function getCollections(callB){
 		operationDB(function(db){
 			colList = [];
@@ -74,7 +77,7 @@ mongoPg = function(dbName,path,callback){
 	function insertOps(colcName,data,callB,many){
 		if(colList.indexOf(colcName)==-1){
 			colList.push(colcName)
-			console.log("Add new Collection");
+			console.log("Add new Collection",colcName);
 		}
 		// function for data insertion
 		if(typeof colcName =="object" && defColName!= undefined){
@@ -82,6 +85,7 @@ mongoPg = function(dbName,path,callback){
 			data = colcName;colcName = defColName;
 			if(typeof data ==='function')callB = data;
 		}
+		if(colcName){
 		operationDB(function(db){
 			if(many){
 				db.collection(colcName).insertMany(data,function(err,res){
@@ -89,14 +93,13 @@ mongoPg = function(dbName,path,callback){
 				})
 			}else {
 				db.collection(colcName).insertOne(data,function(err,res){
-				console.log("err",err)
 				exeCallBack(err,res,callB,db)
 			})
 			}
 
-		})
+		})}
 	}
-	colList = []
+
 	getCollections()
 
 	// Add an entry to DB
@@ -115,6 +118,8 @@ mongoPg = function(dbName,path,callback){
 			findData = colcName;upData = findData;colcName = defColName;
 			if(typeof upData ==='function')callB = data;
 		}
+		console.log(colcName,findData,upData);
+		if(colcName){
 		operationDB(function(db){
 			if(firstOnly === true){
 				db.collection(colcName).updateOne(findData,
@@ -124,56 +129,60 @@ mongoPg = function(dbName,path,callback){
 				db.collection(colcName).updateMany(findData,{$set :upData},function(err,result){
 				exeCallBack(err,result,callB,db)});
 			}
-		})
+		})}
 	}
 
 	//Deleting records from collection
-	var removeRecords = function(colcName,findData,count,callB){
+	var removeRecords = function(colcName,findData,onlyOne,callB){
 		if(typeof colcName =="object" && defColName!= undefined){
-			findData = colcName;count = findData;colcName = defColName;
+			findData = colcName;onlyOne = findData;colcName = defColName;
 		}
-		else if(typeof count ==='function'){callB = count;count=0}
-		count = count*1;
-		console.log(colcName,findData,count)
+		else if(typeof onlyOne ==='function'){callB = onlyOne;onlyOne=false;}
 		if(typeof findData !="object"){
 			throw "invalid format to remove data";
 		}else{
-			operationDB(function(db){
-				if(count != 0){
-					db.collection(colcName).remove(findData,count,function(err,result){
-					exeCallBack(undefined,result,callB,db)
-				});
-				}else {
-					db.collection(colcName).remove(findData,function(err,result){
-					exeCallBack(err,result,callB,db)});
-				}
-			})
+			if(typeof colcName =="string"){
+				operationDB(function(db){
+					if(onlyOne){
+						db.collection(colcName).removeOne(findData,function(err,result){
+						exeCallBack(undefined,result,callB,db)
+						});
+					}else {
+						db.collection(colcName).remove(findData,function(err,result){
+						exeCallBack(err,result,callB,db)});
+					}
+				})}
+
 		}
 	}
 
 
 	//Default search Queries
-	var searchResult = function(colcName,data,callB){
-		var retRes = [];
+	var searchResult = function(colcName,data,callB,onlyOne){
+
 		if(typeof colcName =="object" && defColName!= undefined){
 			data = colcName;colcName = defColName;
 			if(typeof data ==='function')callB = data;
 		}
-
+		if(colcName){
 		operationDB(function(db){
-			var cursor =db.collection('trail').find(data);
-			console.log(cursor)
-	    cursor.each(function(err, doc) {
-	       if (doc != null) {
-						retRes.push(doc)
-	       } else {
-	        	exeCallBack(undefined,retRes,callB,db)
-	       }
-	    });
+			if(onlyOne){
+				db.collection(colcName).findOne(data,function(err,reslt){
+					exeCallBack(err,reslt,callB,db)
+				})
+			}else{
+				db.collection(colcName).find(data).toArray(function(err, docs){
+					exeCallBack(err,docs,callB,db)
+				})
+			}
 		})
+		}
 	}
 
 	var customSearch = {
+		searchOne : function(colcName,callB){
+			searchResult(colcName,{},callB,true)
+		},
 		searchById : function(){}
 	}
 
@@ -187,6 +196,8 @@ mongoPg = function(dbName,path,callback){
 		addBulk : addBulkToCollection,
 		remove : removeRecords,
 		search : searchResult,
+		getSample : customSearch.searchOne,
+		update : updateRecords,
 	}
 
 
