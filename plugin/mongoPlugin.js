@@ -4,6 +4,7 @@
  * Copyright Wenable Technologies pvt Ltd 2016 , Inc.
  * Licensed under MIT (http://opensource.org/licenses/MIT)
  * Desined for MongoDB v 3.2
+ * Developed by alexander pradeep jangam alexander.jangam@wenable.com
 */
 
 
