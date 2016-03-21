@@ -13,7 +13,7 @@ var mongoPg
 
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
-
+var genericDB = require('mongodb').Db;
 // mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 
 // main function for operations
@@ -28,7 +28,9 @@ mongoPg = function(dbName,path,callback){
 		if(err)console.log("err",err)
 
 		//* * //removing slash will interchange
-		try {opfn(mdb);} catch (e) {
+		opfn(mdb)
+		try {
+			} catch (e) {
 			console.log("commonError:",e);
 			mdb.close()
 		}
@@ -39,6 +41,15 @@ mongoPg = function(dbName,path,callback){
 		// common callback execution with validation check for function
 		if(typeof callB === "function")callB(err,data)
 		db.close();
+	}
+	//db.admin().listDatabases
+	var listBDs = function(postGet){
+		operationDB(function(db){
+			db.admin().listDatabases(function(err, dbs) {
+				var sendData = {name:db.databaseName,list:dbs.databases}
+				exeCallBack(err,sendData,postGet,db)
+			});
+		})
 	}
 
 	var createCollection = function(name,postCreate){
@@ -61,6 +72,7 @@ mongoPg = function(dbName,path,callback){
 	}
 	var colList = [];
 	function getCollections(callB){
+		
 		operationDB(function(db){
 			colList = [];
 			db.collections(function(err, collections) {
@@ -196,6 +208,7 @@ mongoPg = function(dbName,path,callback){
 
 
 	return {
+		getDbList : listBDs,
 		setCollection : setDefaultCollection,
 		getCollections : getCollections,
 		newCollection : createCollection,

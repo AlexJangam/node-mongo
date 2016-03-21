@@ -30,9 +30,9 @@ return CryptoJS.SHA256(str).toString();
 function genericCall(url,method,data){
 	var callOb = {
 		url:url?url:"/default",
-		method:method?method:"GET",
-		data:{"data":data?data:""}
+		method:method?method:"GET"
 	};
+	if(data)callOb.data = {"data":data};
 	return callOb;
 }
 
@@ -43,6 +43,37 @@ function	finallyCall(data){
 
 	$(".lgs .resp").append("<div>"+(new Date() +"").slice(4,24) +" : "+ data +"</div>")
 }
+
+$("#getDb .add").click(function(){
+	serverCall(genericCall("/mongo/get-dblist"),function(val){
+		var list = "";
+		for(var i=0,iL=val.list.length;i<iL;i++){
+			list += val.list[i].name + " , ";
+			$("#dblist_select").append("<option val="+val.list[i].name+">"+val.list[i].name+"</option>")
+		}
+		$("#dblist_select").val(val.name)
+		$("#getDb .addval").val(list);
+		finallyCall(val)
+	},
+	function(data){
+		console.log(data)
+		finallyCall(data)
+	},function(err){
+		console.log(err)
+	})
+})
+$("#dblist_select").on("change",function(){
+		serverCall(genericCall("/mongo/set-dblist","GET",$("#dblist_select").val()),function(val){
+		finallyCall(val)
+	},
+	function(data){
+		console.log(data)
+		finallyCall(data)
+	},function(err){
+		console.log(err)
+	})
+})
+
 $("#addCollection .add").click(function(){
 	val = $("#addCollection .addval").val();
 	console.log(val)

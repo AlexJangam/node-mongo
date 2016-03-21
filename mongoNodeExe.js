@@ -54,6 +54,13 @@ function errorRes(res,err){
 	res.send(err)
 }
 
+app.get("/mongo/get-dblist", function(req, res) {
+	mong.getDbList(function(err,list){
+		if(err)errorRes(res,err)
+		else res.send(JSON.stringify(list))
+	})
+})
+
 app.get("/mongo/get-collections", function(req, res) {
 	mong.getCollections(function(err,list){
 		if(err)errorRes(res,err)
