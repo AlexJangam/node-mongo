@@ -61,6 +61,11 @@ app.get("/mongo/get-dblist", function(req, res) {
 	})
 })
 
+app.post("/mongo/set-dblist", function(req, res) {
+	mong = dbConnect(req.dbName)
+  res.send("dbName")
+})
+
 app.get("/mongo/get-collections", function(req, res) {
 	mong.getCollections(function(err,list){
 		if(err)errorRes(res,err)

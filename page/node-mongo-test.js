@@ -1,5 +1,5 @@
 function serverCall(callData,sCB,errCB){
-
+	console.log(callData.data);
 	if(typeof callData.data == "object")callData.data = JSON.stringify(callData.data)
 	if(!errCB)errCB=function(){}
 	$.ajax({
@@ -32,6 +32,7 @@ function genericCall(url,method,data){
 		url:url?url:"/default",
 		method:method?method:"GET"
 	};
+		if(method=="GET"){}
 	if(data)callOb.data = {"data":data};
 	return callOb;
 }
@@ -63,7 +64,7 @@ $("#getDb .add").click(function(){
 	})
 })
 $("#dblist_select").on("change",function(){
-		serverCall(genericCall("/mongo/set-dblist","GET",$("#dblist_select").val()),function(val){
+		serverCall(genericCall("/mongo/set-dblist","POST",$("#dblist_select").val()),function(val){
 		finallyCall(val)
 	},
 	function(data){
