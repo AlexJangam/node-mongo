@@ -51,7 +51,12 @@ mongoPg = function(dbName,path,callback){
 			});
 		})
 	}
+	var getDbName = function(callB){
+		operationDB(function(db){
+				exeCallBack("",db.getName(),callB,db);
+		})
 
+	}
 	var createCollection = function(name,postCreate){
 		defColName = name;
 		if(name){
@@ -72,7 +77,7 @@ mongoPg = function(dbName,path,callback){
 	}
 	var colList = [];
 	function getCollections(callB){
-		
+
 		operationDB(function(db){
 			colList = [];
 			db.collections(function(err, collections) {
@@ -198,6 +203,15 @@ mongoPg = function(dbName,path,callback){
 		}
 	}
 
+	var dropDatabase = function(callB){
+		operationDB(function(db){
+			db.dropDatabase(function(err,result){
+				exeCallBack(err,result,callB,db)
+			})
+
+		})
+	}
+
 	var customSearch = {
 		searchOne : function(colcName,callB){
 			searchResult(colcName,{},callB,true)
@@ -208,6 +222,7 @@ mongoPg = function(dbName,path,callback){
 
 
 	return {
+		getDbName: getDbName,
 		getDbList : listBDs,
 		setCollection : setDefaultCollection,
 		getCollections : getCollections,
@@ -218,6 +233,7 @@ mongoPg = function(dbName,path,callback){
 		search : searchResult,
 		getSample : customSearch.searchOne,
 		update : updateRecords,
+		dropDatabase: dropDatabase
 	}
 
 

@@ -46,6 +46,7 @@ function	finallyCall(data){
 }
 
 $("#getDb .add").click(function(){
+	$("#dblist_select").html("")
 	serverCall(genericCall("/mongo/get-dblist"),function(val){
 		var list = "";
 		for(var i=0,iL=val.list.length;i<iL;i++){
@@ -63,8 +64,42 @@ $("#getDb .add").click(function(){
 		console.log(err)
 	})
 })
+
+$("#getDb .delete").click(function(){
+	serverCall(genericCall("/mongo/dropdb","DELETE"),function(val){
+			$("#getDb .add").click()
+		finallyCall(val)
+	},
+	function(data){
+		console.log(data)
+		finallyCall(data)
+	},function(err){
+		console.log(err)
+	})
+})
+
+$("#addDb .add").click(function(){
+
+	serverCall(genericCall("/mongo/set-database","POST",$("#addDb .addval").val()),function(val){
+		var list = "";
+		for(var i=0,iL=val.list.length;i<iL;i++){
+			list += val.list[i].name + " , ";
+			$("#dblist_select").append("<option val="+val.list[i].name+">"+val.list[i].name+"</option>")
+		}
+		$("#dblist_select").val(val.name)
+		$("#getDb .addval").val(list);
+		finallyCall(val)
+	},
+	function(data){
+		console.log(data)
+		finallyCall(data)
+	},function(err){
+		console.log(err)
+	})
+})
+
 $("#dblist_select").on("change",function(){
-		serverCall(genericCall("/mongo/set-dblist","POST",$("#dblist_select").val()),function(val){
+		serverCall(genericCall("/mongo/set-database","POST",$("#dblist_select").val()),function(val){
 		finallyCall(val)
 	},
 	function(data){

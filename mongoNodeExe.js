@@ -53,7 +53,12 @@ function errorRes(res,err){
 	res.status("400")
 	res.send(err)
 }
-
+app.get("/mongo/get-dbname", function(req, res) {
+	mong.getDbName(function(err,name){
+		if(err)errorRes(res,err)
+		else res.send(JSON.stringify(name))
+	})
+})
 app.get("/mongo/get-dblist", function(req, res) {
 	mong.getDbList(function(err,list){
 		if(err)errorRes(res,err)
@@ -61,9 +66,23 @@ app.get("/mongo/get-dblist", function(req, res) {
 	})
 })
 
-app.post("/mongo/set-dblist", function(req, res) {
-	mong = dbConnect(req.dbName)
-  res.send("dbName")
+app.post("/mongo/set-database", function(req, res) {
+  if(req.body && req.body.data){
+    dbName = req.body.data
+	mong = dbConnect(dbName)
+  }
+  res.send(req.body.data)
+})
+
+app.delete("/mongo/dropdb",function(req,res){
+    mong.dropDatabase(function(err,result){
+      if(!err){
+      console.log("Database ",dbName,"deleted");
+      res.send(JSON.stringify({"message":"success"}))}
+      else{
+        res.send(JSON.stringify({"message":"error"}))
+      }
+    })
 })
 
 app.get("/mongo/get-collections", function(req, res) {
