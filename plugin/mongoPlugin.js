@@ -10,32 +10,43 @@
 
 var mongoPg
 ,defaultPath = "mongodb://localhost:27017";
-
+//username:password@
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
 var genericDB = require('mongodb').Db;
 // mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 
 // main function for operations
-mongoPg = function(dbName,path,callback){
+mongoPg = function(dbName,login,path,callback){
 	var connUrl = defaultPath+"/"+dbName,connDB,defColName;
 	if(typeof path ==='function')callback = path;
 	else if(typeof path ==='string')connUrl = path;
 
-	function operationDB(opfn){
-		//console.log("connUrl",connUrl)
-		MongoClient.connect(connUrl, function(err, mdb) {
-		if(err)console.log("err",err)
-
-		//* * //removing slash will interchange
-		opfn(mdb)
+	function operationDB(opfn,error){
+		console.log("connUrl",connUrl)
 		try {
-			} catch (e) {
-			console.log("commonError:",e);
-			mdb.close()
+			MongoClient.connect(connUrl,login, function(err, mdb) {
+				if(err){
+					var errmsg = err;
+					console.log("Connect Err ",err.message)
+					if(err.message)errmsg=err.message
+					error(errmsg)
+				}else{
+					try {
+						opfn(mdb)
+						} catch (e) {
+						console.log("commonError:",e);
+						if(mdb)
+						mdb.close()
+						error(e)
+					}
+				}
+			})
+		} catch (e) {
+			console.log("Connect Error ",e)
+			error(e)
 		}
-		//*/	opfn(mdb)
-		})
+
 	}
 	function exeCallBack(err,data,callB,db){
 		// common callback execution with validation check for function
@@ -45,10 +56,14 @@ mongoPg = function(dbName,path,callback){
 	//db.admin().listDatabases
 	var listBDs = function(postGet){
 		operationDB(function(db){
+			//console.log(db);
 			db.admin().listDatabases(function(err, dbs) {
-				var sendData = {name:db.databaseName,list:dbs.databases}
+				console.log(dbs);
+				var sendData = {name:db.databaseName,list:dbs!=undefined?dbs.databases:[]}
 				exeCallBack(err,sendData,postGet,db)
 			});
+		},function(e){
+			postGet(e)
 		})
 	}
 	var getDbName = function(callB){
@@ -63,7 +78,7 @@ mongoPg = function(dbName,path,callback){
 		operationDB(function(db){
 			db.createCollection(name,function(err,con){
 				console.log("creating",name)
-				if(err)console.log("Error",err)
+				if(err)console.log("Error in Operation",err)
 				if(colList.indexOf(name)==-1)colList.push(name)
 				exeCallBack(err,con,postCreate,db);
 			});
@@ -82,10 +97,12 @@ mongoPg = function(dbName,path,callback){
 			colList = [];
 			db.collections(function(err, collections) {
 			  if (err)console.log("err",err);
-			  for(var i=0,iL=collections.length;i<iL;i++){
-				  if(collections[i].s.name != "system.indexes")
-				  colList.push(collections[i].s.name)
-			  }
+				else{
+				  for(var i=0,iL=collections.length;i<iL;i++){
+					  if(collections[i].s.name != "system.indexes")
+					  colList.push(collections[i].s.name)
+				  }
+				}
 			  exeCallBack(err,colList,callB,db);
 			});
 
@@ -119,7 +136,7 @@ mongoPg = function(dbName,path,callback){
 		})}
 	}
 
-	getCollections()
+	//getCollections()
 
 	// Add an entry to DB
 	var addToCollection = function(colcName,data,callB){

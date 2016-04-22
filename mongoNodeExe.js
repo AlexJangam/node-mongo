@@ -16,18 +16,22 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser')
 
-app.use('/public', express.static(__dirname + '/page'));
-app.use(bodyParser.json())
-app.use(function(req, res ,next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next()
-});
+
 
 /* Mongo DB functions		*/
 var dbName = "test",colName = "trail";
 var dbConnect = require("./plugin/mongoPlugin.js")
-var mong = dbConnect(dbName)
+var mong,path ="mongodb://ds011890.mlab.com:11890/umass",login = {user: 'umass', pass: '1q@W3e$R'};
+path=undefined,login=undefined;
+
+try {
+  mong = dbConnect(dbName,login,path);
+} catch (e) {
+  console.log("base error ",e);
+} finally {
+
+}
+
 
 //	setCollection  , newCollection , getCollections , add , addBulk , search
 
@@ -46,12 +50,19 @@ db.collection(colName).removeOne({ "del" : "true" },function(){
 })
 
 //*/
-
+app.use('/public', express.static(__dirname + '/page'));
+app.use(bodyParser.json())
+app.use(function(req, res ,next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  if(mong == undefined)res.send(JSON.stringify({message:"DB not conneted"}))
+  next()
+});
 
 
 function errorRes(res,err){
-	res.status("400")
-	res.send(err)
+	res.status("400");
+	res.send(err+'')
 }
 app.get("/mongo/get-dbname", function(req, res) {
 	mong.getDbName(function(err,name){
@@ -110,7 +121,6 @@ app.post("/mongo/add", function(req, res) {
 	//console.log("Add Data",data)
 	//mongoPgn.add("collectionName",{data},callback(optional))
 		mong.add(data.colname,data.value,function(err,result){
-      console.log(result)
 		if(err){
 			errorRes(res,err)
 		}else{

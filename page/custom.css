@@ -20,6 +20,9 @@ width:43%;
 .htfix{height:0;clear:both;line-height:0}
 .fl{float:left;}
 .clr{clear:both;}
+.errormsg{
+	display: none;
+}
 .mgOpe{
   width:69%;
   border-right: 1px solid;
@@ -27,6 +30,9 @@ width:43%;
   height: 700px;
   overflow: auto;
   border: 1px solid;
+}
+.scrollview{
+	  overflow: auto;
 }
 .lgs{width:30%;text-align: center;}
 .lgs .headResp{border-bottom: 1px solid;}

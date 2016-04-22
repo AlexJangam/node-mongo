@@ -1,5 +1,4 @@
 function serverCall(callData,sCB,errCB){
-	console.log(callData.data);
 	if(typeof callData.data == "object")callData.data = JSON.stringify(callData.data)
 	if(!errCB)errCB=function(){}
 	$.ajax({
@@ -137,13 +136,19 @@ $("#getCollection .add").click(function(){
 })
 
 $("#addData .add").click(function(){
-	var pstDta = {
-	colname : colList[$("#colList").val()*1],
-	value : JSON.parse($("#addData .addval").val())
+	$("#addData .errormsg").hide()
+	try {
+		var pstDta = {
+		colname : colList[$("#colList").val()*1],
+		value : JSON.parse($("#addData .addval").val())
+		}
+		serverCall(genericCall("/mongo/add","POST",pstDta),function(data){
+				finallyCall(data)
+		})
+	} catch (e) {
+		$("#addData .errormsg").show();
 	}
-	serverCall(genericCall("/mongo/add","POST",pstDta),function(data){
-			finallyCall(data)
-	})
+
 })
 
 $("#addBulkData .add").click(function(){
@@ -269,7 +274,6 @@ $("#findQuery .selectables .fetch").click(function(){
 
 $("#findQuery .selectables .search").click(function(){
 	var reqData = {query:{}};
-	console.log($(".selectables .fieldSel").val());
 	if($(".selectables .fieldSel").val())
 	reqData.query[$(".selectables .fieldSel").val()]=regxFn.subString($("#findQuery .selectables .searchVal").val());
 	$("#findQuery .result").html("")
