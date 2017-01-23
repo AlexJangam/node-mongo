@@ -1,60 +1,90 @@
-function serverCall(callData,sCB,errCB){
-	if(typeof callData.data == "object")callData.data = JSON.stringify(callData.data)
-	if(!errCB)errCB=function(){}
-	$.ajax({
-	url: callData.url,
-	type: callData.method,
-	crossDomain: true,
-	contentType: 'application/json; charset=utf-8',
-	dataType: "json",
-	data: callData.data,
-	success: sCB,
-	error:errCB,
+function serverCall(callData, sCB, errCB) {
+		if(typeof callData.data == "object" && callData.method !== "GET") {
+			callData.data = JSON.stringify(callData.data);
+		}
+		if(!errCB) {
+			errCB = function(){};
+		}
+		try {
 
-  })
+			$.ajax({
+				url : callData.url,
+				type : callData.method,
+				crossDomain : true,
+				contentType : 'application/json; charset=utf-8',
+				dataType: "json",
+				data : callData.data,
+				params : callData.params,
+				success : sCB,
+				error :errCB
+			});
+		} catch (e) {
+				console.log(e);
+		}
 }
 var regxFn = {
-	subString : function(vRegx){
-
-		return {
-			$regex: ".*"+vRegx+".*",
-			$options: "i"
+		subString : function(vRegx){
+				return {
+					$regex: ".*"+vRegx+".*",
+					$options: "i"
+				}
 		}
-	}
 }
 
 function encrypt(str){
-return CryptoJS.SHA256(str).toString();
+		return CryptoJS.SHA256(str).toString();
 }
 function genericCall(url,method,data){
-	var callOb = {
-		url:url?url:"/default",
-		method:method?method:"GET"
-	};
-		if(method=="GET"){}
-	if(data)callOb.data = {"data":data};
-	return callOb;
+		var callOb = {
+				url : url ? url : "/default",
+				method : method ? method : "GET"
+		}, senddata = {};
+		// if(method=="GET"){}
+		if (data && typeof data === "string") {
+				senddata = {"data":data};
+		} else if (data && typeof data === "object") {
+				senddata = data;
+		}
+
+		callOb.data = senddata;
+		return callOb;
 }
 
 function	finallyCall(data){
-	var dtaJsn = data;
-	if(typeof data == "object")
-		dtaJsn = JSON.stringify(data)
-
-	$(".lgs .resp").append("<div>"+(new Date() +"").slice(4,24) +" : "+ data +"</div>")
+		var dtaJsn = data;
+		if(typeof data == "object") {
+				dtaJsn = JSON.stringify(data)
+		}
+		$(".lgs .resp").append("<div>"+(new Date() +"").slice(4,24) +" : "+ data +"</div>")
 }
 
-$("#getDb .add").click(function(){
-	$("#dblist_select").html("")
+$("#getDb .get-db-list").on("click",function(){
+	$("#dblist_select").html("");
 	serverCall(genericCall("/mongo/get-dblist"),function(val){
-		var list = "";
+		var list = "", liOb, aOb, dbname;
+		$(".db-list").html("");
 		for(var i=0,iL=val.list.length;i<iL;i++){
-			list += val.list[i].name + " , ";
-			$("#dblist_select").append("<option val="+val.list[i].name+">"+val.list[i].name+"</option>")
+			dbname = val.list[i].name;
+			liOb = document.createElement("li");
+			aOb = document.createElement("a");
+			// <li class="nav-item">
+			// 	<a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+			// </li>
+			$(liOb).addClass("nav-item use-db");
+			$(aOb).addClass("nav-link db-select");
+			$(aOb).attr("href","#");
+			$(aOb).html(dbname);
+			$(liOb).attr("use-db",dbname)
+			$(liOb).append(aOb);
+			$(".db-list").append(liOb);
+			selectDBInitiate();
+			// list += val.list[i].name + " , ";
+			// $("#dblist_select").append("<option val="+val.list[i].name+">"+val.list[i].name+"</option>")
 		}
-		$("#dblist_select").val(val.name)
-		$("#getDb .addval").val(list);
-		finallyCall(val)
+
+		// $("#dblist_select").val(val.name);
+		// $("#getDb .addval").val(list);
+		finallyCall(val);
 	},
 	function(data){
 		console.log(data)
@@ -62,7 +92,59 @@ $("#getDb .add").click(function(){
 	},function(err){
 		console.log(err)
 	})
-})
+});
+
+function selectColInitiate() {
+	var mainCls = "#getDb li.use-db ul li.nav-link.col-select";
+	$(mainCls).off();
+	$(mainCls).on("click",function () {
+			var col = {name : $(this).attr("col-name") };
+			$(mainCls).removeClass("active");
+			$(this).addClass("active");
+			serverCall(genericCall("mongo/collection/data","GET",col),
+			function(data){
+
+			},function(err){
+				console.log(err)
+			})
+	});
+}
+
+function selectDBInitiate() {
+	$("#getDb li.use-db .nav-link.db-select").off();
+	$("#getDb li.use-db .nav-link.db-select").on("click",function(){
+			$("#getDb li.use-db").removeClass("active");
+			$("#getDb li.use-db ul").remove();
+			var activeDB = $(this).parents(".use-db"), reqob = genericCall("/mongo/use-database","GET",{name : $(activeDB).attr("use-db")});
+			activeDB.addClass("active");
+			console.log(reqob);
+			serverCall(reqob,
+			function(val){
+				serverCall(genericCall("/mongo/get-collections"),
+				function(data){
+					var uln = document.createElement("ul"), lin;
+					for(var i in data){
+						lin = document.createElement("li")
+						lin.append(data[i]);
+						$(lin).addClass("nav-link cursor col-select");
+						$(lin).attr("col-name",data[i]);
+						uln.append(lin);
+					}
+					activeDB.append(uln);
+					selectColInitiate();
+				},function(err){
+					console.log(err)
+				})
+			finallyCall(val)
+		},
+		function(a,b,c){
+			finallyCall(a)
+		},function(err){
+			console.log(err)
+		})
+	})
+}
+
 
 $("#getDb .delete").click(function(){
 	serverCall(genericCall("/mongo/dropdb","DELETE"),function(val){

@@ -1,140 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-<h1>Mongo Postman </h1>
-<link rel="stylesheet" href="custom.css" type="text/css">
+	<link rel="stylesheet" href="/public/bootstrap/css/bootstrap.css" type="text/css">
+	<link rel="stylesheet" href="/public/custom.css?" type="text/css">
 
 </head>
-<body>
-<div class="mgOpe fl">
-	<div>Mongo Operations : </div>
+<body class="hh100">
 
-	<div class="mgset">
-		<div><h3>Fetch DB<h3></div>
-		<div id="getDb">
-			<div>DB Names :
-			<div>
-				<input class="add" type="button" value="Get DB List"></input> Select DB :
-				<select id="dblist_select"><option></option></select> <input class="delete" type="button" value="Delete"></input>
-				<textarea class="addval sizechg"></textarea></div>
-			</div>
-		</div>
-	</div>
-	<div class="mgset">
-		<div><h3>Add DB<h3></div>
-		<div id="addDb">
-			<div>DB Name : <input class="addval sizechg"></input> &#160; <input class="add" type="button" value="Add"></input></div>
-		</div>
-	</div>
+	<div class="flex-container-vertical hh100">
+		<header>
+			<div id="main-header" class="text-center card-info container-fluid main-header">Mongo Postman </div>
+		</header>
 
-	<div class="mgset">
-		<div><h3>Get Collection<h3></div>
-		<div id="getCollection">
-			<div>Collection Names :
-			<div>
-				<input class="add" type="button" value="Get Collections"></input> <br/>
-				<textarea class="addval sizechg"></textarea></div>
-			</div>
-		</div>
-	</div>
-	<div class="mgset">
-		<div><h3>Add Collection<h3></div>
-		<div id="addCollection">
-			<div>Collection Name : <input class="addval sizechg"></input> &#160; <input class="add" type="button" value="Add"></input></div>
-		</div>
-	</div>
+		<section class="flex-item flex-container-horizontal">
 
-	<div>
-	Select Collection : 	<select id="colList"></select>
-	</div>
+			<section id="getDb" class="select-DB fl flex-container-vertical">
+				<nav class="navbar navbar-inverse bg-inverse flex-item  ">
+					<div class="btn-group mh40">
+						<button type="button" class="btn btn-info get-db-list">
+							<span class="">&#9850;</span> Refresh DB
+						</button>
+						<button type="button" class="btn btn-success add-db">
+							<span class="bold">+</span> Add DB
+						</button>
+						<setheight></setheight>
+					</div>
+					<div class="navbar-collapse col-sm-12 pdr0 scroll flex-item">
+						<ul class="db-list navbar-nav mr-auto">
 
-	<div class="mgset">
-		<div><h3>Add Data<h3></div>
-		<div id="addData">
-			<div>
-			Insert Data :
-			<div><textarea class="addval sizechg"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
-			</div>
-			<div class="errormsg">Please insert proper JSON with ""</div>
-		</div>
-	</div>
-	<div class="mgset">
-		<div><h3>Add Bulk Data<h3></div>
-		<div id="addBulkData">
-			<div>
-			Insert Data :
-			<div><textarea class="addval sizechg"></textarea> <br/> <input class="add" type="button" value="Add"></input></div>
-			</div>
-		</div>
-		<div class="errormsg">Please insert proper JSON with ""</div>
+						</ul>
+					</div>
+				</nav>
+			</section>
+
+			<section class="col-sm-12 flex-item">
+					<header>
+						<h5>DB Query</h5>
+						<input type="text" name="" value="">
+					</header>
+					<section>
+						<div class="">
+								Collection Data : 
+						</div>
+					</section>
+			</section>
+
+		</section>
 	</div>
 
-	<div class="mgset ht200">
-		<div><h3>User Data Modifications<h3></div>
-		<div id="credentials">
-			<div class="fl lft-aln">Username :  </div><input  class="name sizechg"></input><br/>
-			<div class="fl lft-aln">Current Password : </div><input  class="oldpswd sizechg"></input><br/>
-			<div class="fl lft-aln">New Password : </div><input  class="nwpswd sizechg"></input>
-			<br/>
-			<input class="check" type="button" value="Check"></input>
-			<input class="change" type="button" value="Change"></input>
-			<span class="reslt"></span>
-			<div class="htfix"></div>
-			</div>
-	</div>
 
-	<div class="mgset ht200">
-		<div><h3>Custom Queries<h3></div>
-		<div id="customUpdates">
-			<div class="fl lft-aln">findQuery :	</div><textarea class="sizechg"></textarea><br/>
-			<div class="fl lft-aln">Update Query :	</div><textarea class="sizechg"></textarea>
-		</div>
-	</div>
-
-	<div class="mgset">
-		<div><h3>Search Custom Data<h3></div>
-		<div id="searchQuery">
-			<div>
-			Query Data :
-			<div><textarea class="searchval sizechg"></textarea> <br/> <input class="search" type="button" value="Search"></input></div>
-			</div>
-		</div>
-	</div>
-
-	<div class="mgset">
-		<div><h3>Delete data<h3></div>
-		<div id="removeQuery">
-			<div>
-			Delete which contains :  <input type="checkbox" class="cnt sizechg"></input>Only One
-			<div><textarea class="removeval sizechg"></textarea> <br/> <input class="remove" type="button" value="Remove"></input></div>
-			</div>
-		</div>
-	</div>
-
-	<div class="mgset extend scrollview">
-		<div><h3>Fetch Custom Data<h3> </div>
-		<div id="findQuery">
-			<div class="selectables">
-			<div  class="fl defwd fetch"><button class="lh30">fetch</button></div>
-			<div class="fl defwd"><select class="fieldSel lh30"><option value="">All</option></select></div>
-			<div class="fl defwd"><input class="searchVal lh30" placeholder="Search with Text" ></input></div>
-			<div class="fl defwd"><button class="search lh30" >Search</button></div>
-			</div>
-			<div class="result clr">
-
-			</div>
-
-		</div>
-	</div>
-
-	<div class="htfix"></div>
-</div>
-<div class="lgs fl">
-	<div class="headResp">Response Messages: <button class="clear">clear</button></div>
-	<div class="resp"></div>
-</div>
-<script src="jquery-1.11.3.min.js"></script>
-<script src="node-mongo-test.js"></script>
-<script src="sha2.js"></script>
+	<script src="/public/jquery-1.11.3.min.js"></script>
+	<script src="/public/node-mongo-test.js"></script>
+	<script src="/public/sha2.js"></script>
 </body>
 </html>
