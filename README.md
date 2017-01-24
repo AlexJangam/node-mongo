@@ -10,6 +10,8 @@ node-mongo plugin
 Documentation : 
 This is Node Plugin for connecting with mongoDB
 
+It serves as mongo db GUI with documentation.
+
 Defaultly this plugin connects to local mongoDB path "mongodb://localhost:27017", to change it specify full path while connecting to DB
 
 mongoPg.setCollection  - set a default collection in case we are working with single collection but is ineffective if we specify collection names during operations , 
