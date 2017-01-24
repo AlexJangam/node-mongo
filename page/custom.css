@@ -4,15 +4,17 @@ width:90%;
 input.sizechg{
 	height:20px;
 }
-.h100 {
-	height: 100%;
-}
-.hh100{
-	height: 100vh;
-}
-.mh40{
-	min-height: 40px;
-}.pdr0{ padding-right: 0px;} .scroll{overflow: auto;}
+.h100 {	height: 100%;}.hh100{	height: 100vh;}.h-3r{height: 3rem;}
+.mh40{min-height: 40px;}
+.pd0{padding: 0px;}
+.pdr0{ padding-right: 0px;}.pdr-20{padding-right: 20px;}
+.w100{ width: 100%;}
+.scroll{overflow: auto;}.scroll-x{overflow-x: auto;}.scroll-y{overflow-y: auto;}
+.lh-3r{line-height: 3rem;}
+.col-pad{padding-left: 15px;padding-right: 15px;}
+
+
+
 .mgset{
 width:45%;
 height:170px;
@@ -20,6 +22,17 @@ float:left;
 border:1px solid;
 margin:10px 15px 10px 0px;
 padding-left:20px;
+}
+.btn.btn-right-match {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0
+}
+.btn.btn-left-match {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0
+}
+textarea.no-resize{
+	 resize: none;
 }
 .mgset.extend{width:93.5%;height: 400px;}
 .mgset.extend textarea.sizechg {
@@ -29,11 +42,33 @@ width:43%;
 
 /* <div class="htfix"></div>*/
 setheight, .htfix{height:0;clear:both;line-height:0;display: :block;width: 100%;}
-.fl{float:left;}
+.fl{float:left;}.fr{float: right;}
+.no-flex{flex: none;}
 .clr{clear:both;}
 .errormsg{
 	display: none;
 }
+
+.pagi-footer{
+	height: 2.2rem;
+}
+.pagi-num{
+	width: 30px;
+	padding: 1px 5px;
+}
+.action-toggle .modify-show{
+		display: none;
+}
+.action-toggle .modify-hide {
+		display: inline-block;;
+}
+.action-toggle.action-modify .modify-show {
+		display: inline-block;;
+}
+.action-toggle.action-modify .modify-hide{
+		display: none;
+}
+
 #main-header {
 		line-height: 70px;
     font-size: 2.5rem;

@@ -88,7 +88,7 @@ module.exports = function (app, express) {
     }
 
     function getData(req, res, next) {
-        var query = req.query, collName = query.name, page = query.page || 0, count = query.count || 50, mainres = {};
+        var query = req.query, collName = query.name, page = parseInt(query.page) || 0, count = parseInt(query.count) || 50, mainres = {};
         dao.getCollectionData(collName, page, count, function (err, data) {
             dao.getCollectionCount(collName, function (err2, cnt) {
                 mainres.data = data;

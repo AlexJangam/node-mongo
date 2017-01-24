@@ -33,16 +33,42 @@
 				</nav>
 			</section>
 
-			<section class="col-sm-12 flex-item">
-					<header>
-						<h5>DB Query</h5>
-						<input type="text" name="" value="">
-					</header>
-					<section>
-						<div class="">
-								Collection Data : 
+			<section class="col-sm-12 flex-item flex-container-vertical scroll-x" >
+				<header>
+					<h5>DB Query</h5>
+					<div class="input-group">
+						<textarea class="no-resize form-control " placeholder="Type your mongo query here." value=""></textarea>
+						<button class="btn btn-info btn-left-match cursor" type="button" name="button">Search</button>
+					</div>
+				</header>
+				<section class="col-pad w100 sub-text-header lh-3r">
+					Collection Data : <span id="col-select-name"></span>
+				</section>
+				<section class="col-sm-12 h100 flex-item scroll-y pdr-20" >
+					<div class="content ">
+						<table class="col-data-table table table-hover table-striped table-bordered" >
+							<thead class="col-data-head">
+
+							</thead>
+							<tbody class="col-data-content">
+
+							</tbody>
+						</table>
+
+					</div>
+				</section>
+				<footer class="col-sm-12 no-flex pagi-footer">
+						<div class="fl action-toggle">
+							<label for="pagecount"> Page : </label>
+							<button type="button" name="button" class="pagi-prev action  modify-hide">prev</button>
+							<input  type="text" name="pagecount" value="0" class="action pagi-num"> / <span id="page-count" class="">0</span>
+							<button type="button" name="button" class="pagi-next action modify-hide">Next</button>
+							<button type="button" name="button" class="pagi-go action modify-show ">Go</button>
 						</div>
-					</section>
+						<div class="fr">
+							Showing results : <span id="display-list">0 - 0</span>
+						</div>
+				</footer>
 			</section>
 
 		</section>
