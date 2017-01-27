@@ -1,7 +1,7 @@
-'use strict';
+
 /*globals require, express, console, module*/
-/*jslint unparam : true*/
-var dao, dbConnect = require("../plugin/mongoPlugin.js"), dbName = "test", login, path, colName = "trail";
+/*jslint unparam : true, plusplus: true, nomen: true*/
+var dao, dbConnect = require("../plugin/mongoPlugin"), dbName = "test", login, path, colName = "trail", utils = require("../support/utils");
 
 try {
     dao = dbConnect(dbName, login, path);
@@ -10,9 +10,9 @@ try {
 }
 
 module.exports = function (app, express) {
-
+    'use strict';
     function errorRes(res, err) {
-        res.status(400).send(err.toString());
+        res.status(400).send(err);
     }
 
     function gResp(err, data, res) {
@@ -24,7 +24,7 @@ module.exports = function (app, express) {
     }
 
     function getDBNames(req, res) {
-        dao.getDbName(function (err, name) {
+        dao.getDbName().then(function (err, name) {
             if (err) {
                 errorRes(res, err);
             } else {
@@ -34,7 +34,7 @@ module.exports = function (app, express) {
     }
 
     function dbList(req, res) {
-        dao.getDbList(function (err, list) {
+        dao.getDbList().then(function (err, list) {
             if (err) {
                 errorRes(res, err);
             } else {
@@ -48,17 +48,17 @@ module.exports = function (app, express) {
         if (name) {
             dbName = req.body.name;
             dao.disconnect(function () {
-              dao.connect(name, function () {
-                gResp(null, 200, res);
-              });
-            })
+                dao.connect(name).then(function () {
+                    gResp(null, 200, res);
+                });
+            });
         } else {
             gResp({message: "no data"}, null, res);
         }
     }
 
     function dropDb(req, res) {
-        dao.dropDatabase(function (err, result) {
+        dao.dropDatabase().then(function (err, result) {
             if (!err) {
                 res.send(JSON.stringify({"message" : "success"}));
             } else {
@@ -68,7 +68,7 @@ module.exports = function (app, express) {
     }
 
     function getCollections(req, res) {
-        dao.getCollections(function (err, list) {
+        dao.getCollections().then(function (err, list) {
             if (err) {
                 errorRes(res, err);
             } else {
@@ -77,35 +77,104 @@ module.exports = function (app, express) {
         });
     }
 
-    function useCollection(req, res, next) {
-        dao.useCollection(req.query.name, function (err) {
-            if (err) {
-                errorRes(res, err);
-            } else {
-                next();
-            }
-        });
-    }
-
     function getData(req, res, next) {
-        var query = req.query, collName = query.name, page = parseInt(query.page) || 0, count = parseInt(query.count) || 50, mainres = {};
-        dao.getCollectionData(collName, page, count, function (err, data) {
-            dao.getCollectionCount(collName, function (err2, cnt) {
+        var query = req.query, collName = query.name, page = parseInt(query.page, 10) || 0, count = parseInt(query.count, 10) || 50, mainres = {};
+        dao.getCollectionData(collName, page, count).then(function (err, data) {
+            dao.getCollectionCount(collName).then(function (err2, cnt) {
                 mainres.data = data;
                 mainres.count = cnt;
-                gResp(err || err2, mainres, res);
+                gResp(err || err2, utils.clone(mainres), res);
             });
         });
     }
 
+    function formatPostData(data, types) {
+        var key, type, nData = utils.clone(data), noval, nOb = {}, i, iL, iC;
+        try {
+            for (key in types) {
+                if (types.hasOwnProperty(key)) {
+                    type = types[key];
+                    switch (type) {
+                    case "Date":
+                        if (type.indexOf(".") === -1) {
+                            nData[key] = new Date(nData[key]);
+                        } else {
+                            noval = type.split(".");
+                            iL = noval.length;
+                            iC = iL - 1;
+                            for (i = 0; i < iL; i++) {
+                                if (i === 0) {
+                                    nOb = nData[noval[0]];
+                                } else if (i === iC) {
+                                    nOb[iC] = new Date(nOb[iC]);
+                                } else {
+                                    nOb = nOb[noval[i]];
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return nData;
+        } catch (e) {
+            return data;
+        }
+    }
+
     function addData(req, res) {
-        var msg = {message : "success"}, data = req.body.data;
+        var reqob = req.body, colname = req.params.collection, types = reqob.types, data = utils.clone(reqob.data);
         //mongoPgn.add("collectionName", {data}, callback(optional))
-        dao.add(data.colname, data.value, function (err, result) {
+        if (types) {
+            data = formatPostData(data, types);
+        }
+        if (colname && reqob.data) {
+            dao.add(colname, data).then(function (err, result) {
+                var nRes = (result && result.ops && utils.clone(result.ops)) || result;
+                if (err) {
+                    errorRes(res, err);
+                } else {
+                    if (nRes && nRes.length === 1) {
+                        nRes = nRes[0];
+                    }
+                    res.send(nRes);
+                }
+            });
+
+        } else {
+            errorRes(res, {message : "invalid data"});
+        }
+    }
+
+    function findUpdate(req, res) {
+        var reqob = req.body, findOb, types = reqob.types, data = utils.clone(reqob.data), colname = req.url.split("/mongo/update/")[1];
+        //mongoPgn.add("collectionName", {data}, callback(optional))
+        if (types) {
+            data = formatPostData(data, types);
+        }
+        findOb = {"_id" : data._id};
+        delete data._id;
+        if (colname && reqob.data) {
+            dao.updateOne(colname, findOb, data, false).then(function (err, result) {
+                if (err) {
+                    errorRes(res, err);
+                } else {
+                    res.send(utils.clone(result));
+                }
+            });
+        } else {
+            errorRes(res, {message : "invalid data"});
+        }
+    }
+
+    function findUpdateMany(req, res) {
+        var upReq = req.body.data, coll = req.url.split("/mongo/update/")[1];
+        //mongoPgn.update("collectionName", "searchQuery", "upQuery", callback(optional), firstOnly)
+        dao.update(coll, upReq.query, upReq.update).then(function (err, data) {
             if (err) {
                 errorRes(res, err);
             } else {
-                res.send(JSON.stringify(msg));
+                res.send(JSON.stringify(data));
             }
         });
     }
@@ -113,7 +182,7 @@ module.exports = function (app, express) {
     function addMany(req, res) {
         var data = req.body.data;
         //mongoPgn.addBulk("collectionName", [{data}], callback(optional))
-        dao.addBulk(data.colname, data.value, function (err, result) {
+        dao.addMany(data.colname, data.value).then(function (err, result) {
             if (err) {
                 errorRes(res, err);
             } else {
@@ -123,15 +192,15 @@ module.exports = function (app, express) {
     }
 
     function searchData(req, res) {
-        var reqst = req.body.data, coll = req.url.split("/mongo/search/")[1];
+        var reqst = req.body, coll = req.url.split("/mongo/search/")[1];
 
         if (coll.indexOf("/") !== -1 && coll.split("/")[1] !== undefined && coll.split("/")[1] === "first-only") {
-            dao.getSample(coll.split("/")[0], function (err, data) {
+            dao.getSample(coll.split("/")[0]).then(function (err, data) {
                 res.send(JSON.stringify(data));
             });
         } else {
             // mongoPgn.search("collectionName", "searchQuery", callback(optional))
-            dao.search(coll, reqst.query, function (err, data) {
+            dao.search(coll, reqst.query).then(function (err, data) {
                 if (err) {
                     errorRes(res, err);
                 } else {
@@ -145,7 +214,7 @@ module.exports = function (app, express) {
     function findRemove(req, res) {
         var removeReq = req.body.data, coll = req.url.split("/mongo/remove/")[1];
         //mongoPgn.remove("collectionName", {}, onlyOne(T/F - op), callback(optional))
-        dao.remove(coll, removeReq.query, removeReq.onlyOne, function (err, data) {
+        dao.removeOne(coll, removeReq.query).then(function (err, data) {
             if (err) {
                 errorRes(res, err);
             } else {
@@ -154,16 +223,16 @@ module.exports = function (app, express) {
         });
     }
 
-    function findUpdate(req, res) {
-        var upReq = req.body.data, coll = req.url.split("/mongo/update/")[1];
-        //mongoPgn.update("collectionName", "searchQuery", "upQuery", callback(optional), firstOnly)
-        dao.update(coll, upReq.query, upReq.update, function (err, data) {
+    function findRemoveMany(req, res) {
+        var removeReq = req.body.data, coll = req.url.split("/mongo/remove/")[1];
+        //mongoPgn.remove("collectionName", {}, onlyOne(T/F - op), callback(optional))
+        dao.remove(coll, removeReq.query).then(function (err, data) {
             if (err) {
                 errorRes(res, err);
             } else {
                 res.send(JSON.stringify(data));
             }
-        }, upReq.onlyone);
+        });
     }
 
     return {
@@ -172,12 +241,13 @@ module.exports = function (app, express) {
         useDb  : useDb,
         dropDb  : dropDb,
         getCollections  : getCollections,
-        useCollection  : useCollection,
         getData : getData,
         addData  : addData,
         addMany  : addMany,
         searchData  : searchData,
         findRemove  : findRemove,
-        findUpdate  : findUpdate
+        findUpdate  : findUpdate,
+        updateMany : findUpdateMany,
+        removeMany : findRemoveMany
     };
 };

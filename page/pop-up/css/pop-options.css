@@ -1,0 +1,43 @@
+
+.pop-backgroung-layer {
+  position: fixed;
+  display: block;
+  top: 0;
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+  z-index: 1000;
+  opacity: 0.2;
+}
+.pop-ht-fix{
+  clear: both;
+  line-height: 0px;
+  height: 0px;
+}
+#pop-modal {
+
+}
+.pop-content {
+  clear: both;
+}
+.pop-body{
+  position: fixed;
+  top: 15vh;
+  margin: auto;
+  z-index: 1500;
+  max-height: 70vh;
+}
+.pop-stretch, .pol-medium .pop-stretch{
+    width: 50vw;
+    padding: 15px;
+    margin: 0 25vw;
+    background: #fff;
+}
+.pol-large .pop-stretch{
+    width: 80vw;
+    margin: 0 10vw;
+}
+.pol-small .pop-stretch{
+    margin: 0 35vw;
+    width: 30vw;
+}

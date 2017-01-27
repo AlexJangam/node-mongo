@@ -1,29 +1,46 @@
+function serverCall(callData, sCB, errCB) {
+	if(typeof callData.data == "object" && callData.method !== "GET") {
+		callData.data = JSON.stringify(callData.data);
+	}
+	if(!errCB) {
+		errCB = function(){};
+	}
+	try {
+
+		$.ajax({
+			url : callData.url,
+			type : callData.method,
+			crossDomain : true,
+			contentType : 'application/json; charset=utf-8',
+			dataType: "json",
+			data : callData.data,
+			params : callData.params,
+			success : sCB,
+			error :errCB
+		});
+	} catch (e) {
+		console.log(e);
+	}
+}
+
+function genericCall(url,method,data){
+	var callOb = {
+		url : url ? url : "/default",
+		method : method ? method : "GET"
+	}, senddata = {};
+	// if(method=="GET"){}
+	if (data && typeof data === "string") {
+		senddata = {"data":data};
+	} else if (data && typeof data === "object") {
+		senddata = data;
+	}
+
+	callOb.data = senddata;
+	return callOb;
+}
+
 $(document).ready(function () {
 		var pagiCount = 50, page=0, pages = 1, totalCount = 0, regxFn;
-		function serverCall(callData, sCB, errCB) {
-			if(typeof callData.data == "object" && callData.method !== "GET") {
-				callData.data = JSON.stringify(callData.data);
-			}
-			if(!errCB) {
-				errCB = function(){};
-			}
-			try {
-
-				$.ajax({
-					url : callData.url,
-					type : callData.method,
-					crossDomain : true,
-					contentType : 'application/json; charset=utf-8',
-					dataType: "json",
-					data : callData.data,
-					params : callData.params,
-					success : sCB,
-					error :errCB
-				});
-			} catch (e) {
-				console.log(e);
-			}
-		}
 		regxFn = {
 			subString : function(vRegx){
 				return {
@@ -44,22 +61,6 @@ $(document).ready(function () {
 			return obj;
 		}
 
-		function genericCall(url,method,data){
-			var callOb = {
-				url : url ? url : "/default",
-				method : method ? method : "GET"
-			}, senddata = {};
-			// if(method=="GET"){}
-			if (data && typeof data === "string") {
-				senddata = {"data":data};
-			} else if (data && typeof data === "object") {
-				senddata = data;
-			}
-
-			callOb.data = senddata;
-			return callOb;
-		}
-
 		function	finallyCall(data){
 			var dtaJsn = data;
 			if(typeof data == "object") {
@@ -68,32 +69,102 @@ $(document).ready(function () {
 			$(".lgs .resp").append("<div>"+(new Date() +"").slice(4,24) +" : "+ data +"</div>")
 		}
 
-		function oneNode(str, type) {
-			var tNode = document.createElement(type || "td");
-			$(tNode).append(str);
-			return $(tNode);
+		function oneNode(str, type, clsname) {
+			var tNode = $(document.createElement(type || "td"));
+			tNode.append(str.toString() || "-");
+			if (clsname !== undefined) {
+					tNode.addClass(clsname);
+			}
+			return tNode;
 		}
 
-		function createThEle(obj) {
-			var key, oneVal, thead = $(".col-data-table .col-data-head"), thList = [];
+		function createThEle(objs) {
+			var key, oneVal, thead = $(".col-data-table .col-data-head"), thList = [], obj = objs[0];
 			thead.html("");
-			for (key in obj) {
-				if (obj.hasOwnProperty(key)) {
-					oneVal = obj[key];
-					$(thead).append(oneNode(key, "th"));
-					thList.push(key);
+
+			for (var i = 0; i < objs.length; i++) {
+				obj = objs[i];
+				for (key in obj) {
+					if (obj.hasOwnProperty(key) && thList.indexOf(key) === -1) {
+						thList.push(key);
+					}
 				}
 			}
+			for (var j = 0; j < thList.length; j++) {
+				$(thead).append(oneNode(thList[j], "th"));
+			}
+			thead.prepend(oneNode(' ', "th"))
 			return thList;
 		}
 
+		function addNewTh(thKey) {
+			var key, oneVal, thead = $(".col-data-table .col-data-head");
+			if (Array.isArray(thKey)) {
+					for (var i = 0; i < thKey.length; i++) {
+						thead.append(oneNode(thKey[i], "th"));
+					}
+			} else {
+					thead.append(oneNode(thKey, "th"));
+			}
+		}
+
+		var breakpoint = 100;
+
+		function getType(ob, k1) {
+			var retV = {}, k2, k3, tmpOb, nOb = Object.assign({}, ob);
+			if (breakpoint-- < 0) {
+				return
+			}
+			if (typeof ob === "object") {
+				if (ob instanceof Date) {
+					tmpOb = {};
+					tmpOb[k1] = "Date"
+					retV = tmpOb;//[tmpOb];
+				} else if (ob instanceof Array) {
+					tmpOb = {};
+					tmpOb[k1] = "Array"
+					retV = tmpOb;//[tmpOb];
+				} else {
+					//If object type.
+					retV = {};
+					retV[k1] = "object"
+					// retV = [tmpOb];//"Object";
+					for (k2 in nOb) {
+						if (nOb.hasOwnProperty(k2)) {
+								subType = getType(nOb[k2], k1 + "." +k2);
+								// 	retV = retV.concat(subType);
+								Object.assign(retV,subType);
+						}
+					}
+				}
+			} else {
+				tmpOb = {};
+				tmpOb[k1] = typeof ob;
+				retV = tmpOb;//[tmpOb];
+			}
+			return clone(retV);
+		}
+
 		function getOrderedTrEle(obj, order) {
-			var key, oneVal, resVal, trList = [], trNew = [], newKeys = [], keyIndex = 0, trow = $(document.createElement("tr"));
+			var key, i, oneVal, resVal, trList = [], trNew = [], newKeys = [], keyIndex = 0, types, trow = $(document.createElement("tr")),
+					viewIcon = '<i class="fa fa-eye"></i>', cls = "icon-td-def cursor", dataTypes = {}, subType;
 			for (key in obj) {
 				if (obj.hasOwnProperty(key)) {
 					oneVal = obj[key];
 					keyIndex = order.indexOf(key);
 					resVal = (typeof oneVal === "object") ? "Object" : oneVal;
+
+					types = getType(resVal, key);
+
+					for (var typKey in types) {
+						if (types.hasOwnProperty(typKey)) {
+							dataTypes[typKey] = types[typKey];
+						}
+					}
+
+					if (resVal instanceof Date) {
+							resVal = resVal.toISOString();
+					}
 					if (keyIndex !== -1) {
 						trList[keyIndex] = oneNode(resVal, "td");
 					} else {
@@ -102,22 +173,43 @@ $(document).ready(function () {
 					}
 				}
 			}
-			order.concat(newKeys);
-			trList.concat(trNew);
-			for (var i = 0; i < trList.length; i++) {
-				trow.append(trList[i]);
+			order = order.concat(newKeys);
+			trList = trList.concat(trNew);
+			for (i = 0; i < order.length; i++) {
+				trow.append(trList[i] || oneNode("", "td"));
 			}
+			viewIcon = oneNode(viewIcon, "td", cls);
+			viewIcon.attr("data-string", JSON.stringify(obj)).attr("data-type",JSON.stringify(dataTypes));
+			viewIcon.attr("data-order", JSON.stringify(order));
+			trow.prepend(viewIcon);
 			return $(trow);
 		}
 
-		function populateData(data, order) {
+
+		function initiateEdit(colName) {
+				var eleStr = ".col-data-content td.icon-td-def";
+				$(eleStr).off();
+				$(eleStr).on("click",function () {
+						var eleObj = JSON.parse($(this).attr("data-string")), dataTypes = JSON.parse($(this).attr("data-type"));
+						popupModule("/public/modals/json-display.html", loadJsonContent, {colname : colName, data : eleObj, types : dataTypes}).then(function (data) {
+								var newTr = getOrderedTrEle(data, JSON.parse($(eleStr).attr("data-order")), colName);
+								$(eleStr).parents("tr").html(newTr.html());
+								setTimeout(function () {
+									initiateEdit(colName);
+								}, 10);
+						});
+				});
+		}
+
+		function populateData(data, order, colName) {
 			var i, oneVal, oneTr, tbody = $(".col-data-table .col-data-content"), fnlOrder = clone(order);
 			tbody.html("");
 			for (i = 0, iL = data.length; i < iL; i++) {
 				oneVal = data[i];
-				oneTr = getOrderedTrEle(oneVal, fnlOrder);
+				oneTr = getOrderedTrEle(oneVal, fnlOrder, colName);
 				tbody.append(oneTr);
 			}
+			initiateEdit(colName);
 		}
 
 		function setFooter(colName, ttl) {
@@ -174,8 +266,8 @@ $(document).ready(function () {
 		}
 
 		function displayContent(colName, collData) {
-			var totalData = collData.data, firstEle = totalData[0], thList = firstEle && createThEle(firstEle) || [];
-			populateData(totalData, thList);
+			var totalData = collData.data, firstEle = totalData[0], thList = totalData.length && createThEle(totalData) || [];
+			populateData(totalData, thList, colName);
 			setFooter(colName, collData.count);
 		}
 

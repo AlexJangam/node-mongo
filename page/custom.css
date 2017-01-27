@@ -143,3 +143,16 @@ setheight, .htfix{height:0;clear:both;line-height:0;display: :block;width: 100%;
 .select-DB{
 	width: 300px;
 }
+
+
+.icon-td-def{
+	 width: 42px;
+}
+
+.json-display .def-pad-text{
+	padding: 5px;
+}
+.json-display .json-text{
+		min-height: 150px;
+		width: 100%;
+}

@@ -6,293 +6,271 @@
 * Developed by alexander pradeep jangam alexander.jangam@wenable.com
 */
 /*globals module, require, express, console*/
-/*jslint unparam : true*/
+/*jslint unparam: true, plusplus: true, nomen: true */
 
-var defaultPath = "mongodb://localhost:27017", MongoClient = require('mongodb').MongoClient, ObjectId = require('mongodb').ObjectID, genericDB = require('mongodb').Db;
-// mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+var defaultPath = "mongodb://localhost:27017", MongoClient = require('mongodb').MongoClient, ObjectId = require('mongodb').ObjectID, genericDB = require('mongodb').Db, utils = require("./support/utils"), emsg = require("./support/emessages");
+// mongodb://[username:password@]host1[:port1][, host2[:port2], ...[, hostN[:portN]]][/[database][?options]]
+
 
 // main function for operations
 module.exports = function (dbName, login, path) {
-
     'use strict';
-    var connUrl = defaultPath + "/" + dbName, connDB, defColName, mainDb;
-    if(typeof path ==='string') {
+    var connUrl = defaultPath + "/" + dbName, mainDb, customSearch;
+    if (typeof path === 'string') {
         connUrl = path;
     }
 
-    function operationDB(opfn,error) {
-    	// console.log("connUrl",connUrl)
-    	try {
-        MongoClient.connect(connUrl,login, function(err, mdb) {
-        	if(err){
-            var errmsg = err;
-            console.log("Connect Err ",err.message)
-            if(err.message)errmsg=err.message
-            error(errmsg)
-        	}else{
-            try {
-            	opfn(mdb)
-            } catch (e) {
-            	console.log("commonError:",e);
-            	if(mdb)
-            	mdb.close()
-            	error(e)
+    function connect(name) {
+        var connectDB = (typeof name === "string" && defaultPath + "/" + name) || connUrl, prom = utils.promise();
+        MongoClient.connect(connectDB, login, function (err, mdb) {
+            if (err) {
+                console.log("Connect Err ", err);
+            } else {
+                mainDb = mdb;
             }
-        	}
-        })
-    	} catch (e) {
-        console.log("Connect Error ",e)
-        error(e)
-    	}
-    }
-
-    function connect(name, cb) {
-			var connectDB = (typeof name === "string" && defaultPath + "/" + name) || connUrl;
-			cb = (typeof name === "function" && name) || cb;
-    	MongoClient.connect(connectDB, login, function(err, mdb) {
-        if(err) {
-        	var errmsg = err;
-        	console.log("Connect Err ",err.message)
-        } else {
-        	mainDb = mdb;
-					if (typeof cb === "function") {
-						cb();
-					}
-        }
-    	});
+            prom.post(err, (!err && emsg.success) || null);
+        });
+        return prom.prom;
     }
     connect();
 
-		function disconnect(cb) {
-				mainDb.close();
-				mainDb = null;
-				cb();
-		}
-
-    function exeCallBack(err,data,callB,db){
-    	// common callback execution with validation check for function
-    	if(typeof callB === "function")callB(err,data)
-    	db.close();
+    function disconnect(cb) {
+        mainDb.close();
+        mainDb = null;
+        cb();
     }
+
+    function nocollection(cb) {
+        cb(emsg.nocollection);
+    }
+
     //db.admin().listDatabases
-    var listBDs = function(postGet){
-    	mainDb.admin().listDatabases(function(err, dbs) {
-        var sendData = {
-        	name:mainDb.databaseName,
-        	list:dbs !== undefined ? dbs.databases : []
-        };
-        postGet(err, sendData);
-        // exeCallBack(err,sendData,postGet,db);
-    	});
+    function listBDs() {
+        var prom = utils.promise();
+        mainDb.admin().listDatabases(function (err, dbs) {
+            var sendData = {
+                name : mainDb.databaseName,
+                list : dbs !== undefined ? dbs.databases : []
+            };
+            prom.post(err, sendData);
+        });
+        return prom.prom;
     }
 
-    function getDbName(callB){
-    	callB("", mainDb.getName());
+    function getDbName() {
+        var prom = utils.promise();
+        prom.post("", mainDb.getName());
+        return prom.prom;
     }
 
-    function createCollection (name,postCreate) {
-    	defColName = name;
-    	if(name){
-        operationDB(function(db){
-        	db.createCollection(name,function(err,con){
-            if(err)console.log("Error in Operation",err)
-            if(colList.indexOf(name)==-1)colList.push(name)
-            exeCallBack(err,con,postCreate,db);
-        	});
-        	//db.close();
-        })
-    	}
+    function createCollection(name) {
+        var prom = utils.promise();
+        if (name) {
+            mainDb.createCollection(name, function (err, con) {
+                prom.post(err, emsg.success);
+            });
+        } else {
+            nocollection(prom.post);
+        }
+        return prom.prom;
     }
-
-    var colList = [];
 
     function getCollections(callB) {
-    	colList = [];
-    	mainDb.collections(function(err, collections) {
-        if (err)console.log("err",err);
-        else{
-        	for(var i=0,iL=collections.length;i<iL;i++){
-            if(collections[i].s.name != "system.indexes")
-            colList.push(collections[i].s.name)
-        	}
-        }
-        callB(err, colList);
-        // exeCallBack(err,colList,callB,db);
-    	});
-    }
-
-
-    function insertOps(colcName,data,callB,many){
-    	if(colList.indexOf(colcName)==-1){
-        colList.push(colcName)
-    	}
-    	// function for data insertion
-    	if(typeof colcName =="object" && defColName!= undefined){
-        //setting data and callB in case we used default collections name, where first element will be data
-        data = colcName;colcName = defColName;
-        if(typeof data ==='function')callB = data;
-    	}
-    	if(colcName){
-        operationDB(function(db){
-        	if(many){
-            db.collection(colcName).insertMany(data,function(err,res){
-            	exeCallBack(err,res,callB,db)
-            })
-        	}else {
-            db.collection(colcName).insertOne(data,function(err,res){
-            	exeCallBack(err,res,callB,db)
-            })
-        	}
-
+        var colList = [], prom = utils.promise();
+        mainDb.collections(function (err, collections) {
+            var i, iL;
+            if (err) {
+                console.log("err", err);
+            } else if (!collections) {
+                prom.post(null, []);
+            } else {
+                for (i = 0, iL = collections.length; i < iL; i++) {
+                    if (collections[i].s.name !== "system.indexes") {
+                        colList.push(collections[i].s.name);
+                    }
+                }
+            }
+            prom.post(err, colList);
         });
-    	}
+        return prom.prom;
     }
 
-    //getCollections()
 
-    // Add an entry to DB
-    var addToCollection = function(colcName,data,callB){
-    	insertOps(colcName,data,callB,false);
+    // Add an entry to collection in DB
+    function addToCollection(colName, data) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (!data) {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).insertOne(data, {"new" : true}, prom.post);
+        }
+        return prom.prom;
     }
 
     // Add a set of objects to DB
-    var addBulkToCollection = function(colcName,data,callB){
-    	insertOps(colcName,data,callB,true)
+    function addBulkToCollection(colName, data, callB) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (!data) {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).insertMany(data, function (err, res) {
+                prom.post(err, res);
+            });
+        }
+        return prom.prom;
     }
 
     //Update Records
-    function updateRecords (colcName,findData,upData,callB,firstOnly) {
-    	if(typeof colcName =="object" && defColName!= undefined){
-        findData = colcName;upData = findData;colcName = defColName;
-        if(typeof upData ==='function')callB = data;
-    	}
+    function updateRecord(colName, findData, upData, upsert) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (typeof upData !== "object") {
+            prom.post(emsg.invalid);
+        } else {
+            if (findData.hasOwnProperty("_id")) {
+                findData._id = new ObjectId(findData._id);
+            }
 
-    	if(colcName){
-        if(findData._id){
-        	findData._id = ObjectId(findData._id);
+            mainDb.collection(colName).
+                findOneAndUpdate(findData, {$set : upData}, {"new" : true, upsert : upsert || false}, function (err, resp) {
+                    console.log("update", err, resp);
+                    prom.post(err, resp && resp.value);
+                });
         }
-        operationDB(function (db) {
-        	if (firstOnly === true) {
-            db.collection(colcName).
-            updateOne(findData, {$set :upData},function (err,result) {
-            	exeCallBack(err,result,callB,db);
+        return prom.prom;
+    }
+
+    function updateRecords(colName, findData, upData, upsert) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (typeof upData !== "object" || (upsert && typeof upsert !== "boolean")) {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).update(findData, {$set : upData}, {upsert : upsert || false}, function (err, resp) {
+                prom.post(err, resp && resp.value);
             });
-        	} else {
-            db.collection(colcName).updateMany(findData, {$set :upData}, function (err,result) {
-            	exeCallBack(err,result,callB,db);
-            });
-        	}
-        });
-    	}
+        }
+        return prom.prom;
     }
 
     //Deleting records from collection
-    var removeRecords = function(colcName,findData,onlyOne,callB){
-    	if(typeof colcName =="object" && defColName!= undefined){
-        findData = colcName;onlyOne = findData;colcName = defColName;
-    	}
-    	else if(typeof onlyOne ==='function'){callB = onlyOne;onlyOne=false;}
-    	if(typeof findData !="object"){
-        throw "invalid format to remove data";
-    	}else{
-        if(typeof colcName =="string"){
-        	operationDB(function(db){
-            if(findData._id)findData._id = ObjectId(findData._id)
-            if(onlyOne){
-            	db.collection(colcName).removeOne(findData,function(err,result){
-                exeCallBack(undefined,result,callB,db)
-            	});
-            }else {
-            	db.collection(colcName).remove(findData,function(err,result){
-                exeCallBack(err,result,callB,db)});
-            	}
-            }
-        	)
+    function removeRecord(colName, findData) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (typeof findData !== "object") {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).findOneAndDelete(findData, function (err, resp) {
+                prom.post(err, resp && resp.value);
+            });
         }
-
-    	}
+        return prom.prom;
     }
 
-    function getCollData(colcName, page, count, callB) {
-    	if (colcName) {
-          	mainDb.collection(colcName).find({}).skip(page * count).limit(count).toArray(function(err, docs){
-                callB(err,docs);
-            });
-	    	} else {
-	        	callB({message : "no collection name specified."});
-	    	}
+    function removeRecords(colName, findData, callB) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (typeof findData !== "object") {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).remove(findData, prom.post);
+        }
+        return prom.prom;
     }
 
-		function getCollCount(colcName, callB) {
-    	if (colcName) {
-          	mainDb.collection(colcName).find({}).count(function(err, cnt){
-                callB(err,cnt);
+
+    function getCollData(colName, page, count) {
+        var prom = utils.promise();
+        if (colName) {
+            mainDb.collection(colName).find({}).skip(page * count).limit(count).toArray(function (err, docs) {
+                prom.post(err, docs);
             });
-	    	} else {
-	        	callB({message : "no collection name specified."});
-	    	}
+        } else {
+            prom.post({message : "no collection name specified."});
+        }
+        return prom.prom;
+    }
+
+    function getCollCount(colName, query) {
+        var prom = utils.promise(), findData = (typeof query === "object" && query) || {};
+        if (!colName) {
+            nocollection(prom.post);
+        } else {
+            mainDb.collection(colName).find(findData).count(prom.post);
+        }
+        return prom.prom;
     }
 
     //Default search Queries
-    var searchResult = function(colcName,data,callB,onlyOne){
-
-    	if(typeof colcName === "object" && defColName !== undefined){
-        data = colcName;
-        colcName = defColName;
-        if(typeof data ==='function') {
-        	callB = data;
-        }
-    	}
-    	if (colcName) {
-        if(onlyOne){
-        	mainDb.collection(colcName).findOne(data, function(err,reslt){
-            exeCallBack(err,reslt,callB,db)
-        	});
+    function searchResult(colName, findData) {
+        var prom = utils.promise();
+        if (!colName) {
+            console.log("no coll");
+            nocollection(prom.post);
+        } else if (typeof findData !== "object") {
+            console.log("object");
+            prom.post(emsg.invalid);
         } else {
-        	mainDb.collection(colcName).find(data).toArray(function(err, docs){
-            exeCallBack(err,docs,callB,db)
-        	});
+            console.log("results");
+            mainDb.collection(colName).findOne(findData, prom.post);
         }
-    	}
+        return prom.prom;
     }
 
-    var dropDatabase = function(callB) {
-    	operationDB(function(db){
-        db.dropDatabase(function(err,result){
-        	exeCallBack(err,result,callB,db)
-        })
-
-    	})
+    function searchResults(colName, findData) {
+        var prom = utils.promise();
+        if (!colName) {
+            nocollection(prom.post);
+        } else if (typeof findData !== "object") {
+            prom.post(emsg.invalid);
+        } else {
+            mainDb.collection(colName).find(findData).toArray(prom.post);
+        }
+        return prom.prom;
     }
 
-    var customSearch = {
-    	searchOne : function(colcName,callB){
-        searchResult(colcName,{},callB,true)
-    	},
-    	searchById : function(){}
+    function dropDatabase() {
+        var prom = utils.promise();
+        mainDb.dropDatabase(prom.post);
+        return prom.prom;
     }
 
-		function useCollection(name, cb) {
-				defColName = name || defColName;
-				cb(defColName);
-		}
+    customSearch = {
+        searchOne : function (colName) {
+            searchResult(colName, {});
+        },
+        searchById : function (colName, id) {
+            searchResult(colName, {"_id" : id});
+        }
+    };
+
 
     return {
-			connect : connect,
-			disconnect : disconnect,
-    	getDbName: getDbName,
-    	getDbList : listBDs,
-    	getCollections : getCollections,
-			useCollection : useCollection,
-    	newCollection : createCollection,
-    	add : addToCollection,
-			getCollectionData : getCollData,
-			getCollectionCount : getCollCount,
-    	addBulk : addBulkToCollection,
-    	remove : removeRecords,
-    	search : searchResult,
-    	getSample : customSearch.searchOne,
-    	update : updateRecords,
-    	dropDatabase: dropDatabase
-    }
-}
+        connect : connect,
+        disconnect : disconnect,
+        getDbName: getDbName,
+        getDbList : listBDs,
+        getCollections : getCollections,
+        newCollection : createCollection,
+        add : addToCollection,
+        getCollectionData : getCollData,
+        getCollectionCount : getCollCount,
+        addMany : addBulkToCollection,
+        removeOne : removeRecord,
+        remove : removeRecords,
+        search : searchResults,
+        searchOne : searchResult,
+        getSample : customSearch.searchOne,
+        update : updateRecords,
+        updateOne : updateRecord,
+        dropDatabase: dropDatabase
+    };
+};
