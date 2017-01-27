@@ -138,7 +138,6 @@ module.exports = function (dbName, login, path) {
 
             mainDb.collection(colName).
                 findOneAndUpdate(findData, {$set : upData}, {"new" : true, upsert : upsert || false}, function (err, resp) {
-                    console.log("update", err, resp);
                     prom.post(err, resp && resp.value);
                 });
         }
@@ -213,13 +212,10 @@ module.exports = function (dbName, login, path) {
     function searchResult(colName, findData) {
         var prom = utils.promise();
         if (!colName) {
-            console.log("no coll");
             nocollection(prom.post);
         } else if (typeof findData !== "object") {
-            console.log("object");
             prom.post(emsg.invalid);
         } else {
-            console.log("results");
             mainDb.collection(colName).findOne(findData, prom.post);
         }
         return prom.prom;
