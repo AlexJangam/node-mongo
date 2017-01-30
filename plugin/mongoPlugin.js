@@ -198,7 +198,6 @@ module.exports = function (dbName, login, path) {
         } else {
             id_Obj(findData);
             mainDb.collection(colName).findOneAndDelete(findData, function (err, resp) {
-                console.log(resp);
                 prom.post(err, resp && resp.value);
             });
         }
