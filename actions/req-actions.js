@@ -1,7 +1,7 @@
 
 /*globals require, express, console, module*/
 /*jslint unparam : true, plusplus: true, nomen: true*/
-var dao, dbConnect = require("../plugin/mongoPlugin"), dbName = "test", login, path, colName = "trail", utils = require("../support/utils");
+var dao, dbConnect = require("../plugin/mongoPlugin"), dbName = "test", login, path, colName = "trail", utils = require("../support/utils")();
 
 try {
     dao = dbConnect(dbName, login, path);
@@ -76,41 +76,45 @@ module.exports = function (app, express) {
             }
         });
     }
-
     function getData(req, res, next) {
         var query = req.query, collName = query.name, page = parseInt(query.page, 10) || 0, count = parseInt(query.count, 10) || 50, mainres = {};
-        dao.getCollectionData(collName, page, count).then(function (err, data) {
+        dao.getPaginated(collName, page, count).then(function (err, data) {
             dao.getCollectionCount(collName).then(function (err2, cnt) {
                 mainres.data = data;
                 mainres.count = cnt;
+                if (data.length > 0) {
+                    mainres.types = utils.getTypes(data[0]);
+                }
                 gResp(err || err2, utils.clone(mainres), res);
             });
         });
     }
 
     function formatPostData(data, types) {
-        var key, type, nData = utils.clone(data), noval, nOb = {}, i, iL, iC;
+        var key, type, nData = utils.clone(data), noval, pkey, nOb = {}, i, iL, iC;
         try {
             for (key in types) {
                 if (types.hasOwnProperty(key)) {
                     type = types[key];
                     switch (type) {
                     case "Date":
-                        if (type.indexOf(".") === -1) {
+                        if (key.indexOf(".") === -1) {
                             nData[key] = new Date(nData[key]);
                         } else {
-                            noval = type.split(".");
+                            noval = key.split(".");
                             iL = noval.length;
                             iC = iL - 1;
                             for (i = 0; i < iL; i++) {
-                                if (i === 0) {
-                                    nOb = nData[noval[0]];
-                                } else if (i === iC) {
-                                    nOb[iC] = new Date(nOb[iC]);
-                                } else {
-                                    nOb = nOb[noval[i]];
-                                }
+                              if (i === 0) {
+                                nOb = nData[noval[0]];
+                                pkey = noval[0];
+                              } else if (i === iC) {
+                                nOb[noval[i]] = new Date(nOb[noval[i]]);// new Date(nOb[iC]["$date"]);
+                              } else {
+                                nOb = nOb[noval[i]];
+                              }
                             }
+
                         }
                         break;
                     }
@@ -214,7 +218,7 @@ module.exports = function (app, express) {
     function findRemove(req, res) {
         var removeReq = req.body.data, coll = req.url.split("/mongo/remove/")[1];
         //mongoPgn.remove("collectionName", {}, onlyOne(T/F - op), callback(optional))
-        dao.removeOne(coll, removeReq.query).then(function (err, data) {
+        dao.removeOne(coll, removeReq).then(function (err, data) {
             if (err) {
                 errorRes(res, err);
             } else {

@@ -29,7 +29,6 @@
 									})
 									done(data, {
 										close : function (pdata) {
-												console.log("pdata", pdata);
 												exeFn(pdata);
 												popModal.remove();
 										}, dismiss : function () {
@@ -37,10 +36,10 @@
 										}
 									});
 							}, function (e2) {
-									console.log("e2",e2);
+									console.log("Error getting HTML 2",e2);
 							})
 					}, function (e1) {
-						console.log("e1", e1);
+						console.log("Error getting HTML 1", e1);
 					});
 
 					function copyFn(fn) {

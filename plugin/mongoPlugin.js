@@ -8,6 +8,29 @@
 /*globals module, require, express, console*/
 /*jslint unparam: true, plusplus: true, nomen: true */
 
+/**
+  * connect : "connect" function connects do specified DB ( default "test" DB if not specified) and shall be called so switch between DBs.
+  * disconnect : "disconnect" function disconnnects the current DB which is connected to.(If switched without disconnect)
+  * getDbName: "getDbName" function gets name of connected Database.
+  * getDbList : "listBDs" Gets the list of Database names of connected MongoDB.
+  * getCollections : "getCollections" get the list of collections in connected Database.
+  * newCollection : "createCollection" creates a new collection in Database.
+  * add : "addToCollection" adds a document to the collection.
+  * getPaginated : "getPagiCollData" gets specified limit of documents from collection ( used for pagination ).
+  * getCollectionData : "getCollData" gets objects in collection.
+  * getCollectionCount : "getCollCount" gets the count of documents in collection.
+  * addMany : "addBulkToCollection" adds many documents to collection.
+  * removeOne : "removeRecord" finds and removes a record from document.
+  * remove : "removeRecords" finds and removes multiple documents from collection.
+  * search : "searchResults" searches for documents which matches.
+  * searchOne : "searchResult" searches the first document which matches.
+  * getSample : "customSearch.searchOne" gets one sample data from the collection.
+  * update : "updateRecords" updates existing documents and upsert can be mentioned.
+  * updateOne : "updateRecord" updates a single record which matches.
+  * dropDatabase: "dropDatabase" drops the databse from connected Mongodb.
+  *
+
+**/
 var defaultPath = "mongodb://localhost:27017", MongoClient = require('mongodb').MongoClient, ObjectId = require('mongodb').ObjectID, genericDB = require('mongodb').Db, utils = require("./support/utils"), emsg = require("./support/emessages");
 // mongodb://[username:password@]host1[:port1][, host2[:port2], ...[, hostN[:portN]]][/[database][?options]]
 
@@ -15,13 +38,18 @@ var defaultPath = "mongodb://localhost:27017", MongoClient = require('mongodb').
 // main function for operations
 module.exports = function (dbName, login, path) {
     'use strict';
-    var connUrl = defaultPath + "/" + dbName, mainDb, customSearch;
+    var connUrl = defaultPath + "/" + dbName, mainDb = {}, customSearch;
     if (typeof path === 'string') {
         connUrl = path;
     }
 
     function connect(name) {
         var connectDB = (typeof name === "string" && defaultPath + "/" + name) || connUrl, prom = utils.promise();
+        try {
+            mainDb.close();
+        } catch (e) {
+            console.log("DB not connected.");
+        }
         MongoClient.connect(connectDB, login, function (err, mdb) {
             if (err) {
                 console.log("Connect Err ", err);
@@ -124,6 +152,11 @@ module.exports = function (dbName, login, path) {
         return prom.prom;
     }
 
+    function id_Obj(findData) {
+      if (findData.hasOwnProperty("_id")) {
+          findData._id = new ObjectId(findData._id);
+      }
+    }
     //Update Records
     function updateRecord(colName, findData, upData, upsert) {
         var prom = utils.promise();
@@ -132,12 +165,9 @@ module.exports = function (dbName, login, path) {
         } else if (typeof upData !== "object") {
             prom.post(emsg.invalid);
         } else {
-            if (findData.hasOwnProperty("_id")) {
-                findData._id = new ObjectId(findData._id);
-            }
-
+            id_Obj(findData);
             mainDb.collection(colName).
-                findOneAndUpdate(findData, {$set : upData}, {"new" : true, upsert : upsert || false}, function (err, resp) {
+                findOneAndUpdate(findData, upData, {"new" : true, upsert : upsert || false}, function (err, resp) {
                     prom.post(err, resp && resp.value);
                 });
         }
@@ -166,7 +196,9 @@ module.exports = function (dbName, login, path) {
         } else if (typeof findData !== "object") {
             prom.post(emsg.invalid);
         } else {
+            id_Obj(findData);
             mainDb.collection(colName).findOneAndDelete(findData, function (err, resp) {
+                console.log(resp);
                 prom.post(err, resp && resp.value);
             });
         }
@@ -186,10 +218,22 @@ module.exports = function (dbName, login, path) {
     }
 
 
-    function getCollData(colName, page, count) {
+    function getPagiCollData(colName, page, count) {
         var prom = utils.promise();
         if (colName) {
             mainDb.collection(colName).find({}).skip(page * count).limit(count).toArray(function (err, docs) {
+                prom.post(err, docs);
+            });
+        } else {
+            prom.post({message : "no collection name specified."});
+        }
+        return prom.prom;
+    }
+
+    function getCollData(colName, page, count) {
+        var prom = utils.promise();
+        if (colName) {
+            mainDb.collection(colName).find({}).toArray(function (err, docs) {
                 prom.post(err, docs);
             });
         } else {
@@ -258,6 +302,7 @@ module.exports = function (dbName, login, path) {
         newCollection : createCollection,
         add : addToCollection,
         getCollectionData : getCollData,
+        getPaginated : getPagiCollData,
         getCollectionCount : getCollCount,
         addMany : addBulkToCollection,
         removeOne : removeRecord,

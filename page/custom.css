@@ -146,9 +146,12 @@ setheight, .htfix{height:0;clear:both;line-height:0;display: :block;width: 100%;
 
 
 .icon-td-def{
-	 width: 42px;
+	 width: 70px;
 }
-
+.icon-td-def i{
+		float: left;
+		padding: 0 4px;
+}
 .json-display .def-pad-text{
 	padding: 5px;
 }
